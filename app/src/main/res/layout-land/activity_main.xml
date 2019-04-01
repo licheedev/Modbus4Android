@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/page_bg"
+    android:orientation="horizontal"
+    tools:context=".MainActivity">
+
+
+    <LinearLayout
+        android:id="@+id/area_device"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/area_console"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            style="@style/LabelStyle"
+            android:text="串口：" />
+
+        <org.angmarch.views.NiceSpinner
+            android:id="@+id/spinner_devices"
+            android:layout_width="300pt"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:text="/sys/dev/ttyS1" />
+
+        <TextView
+            style="@style/LabelStyle"
+            android:layout_marginLeft="16pt"
+            android:text="波特率：" />
+
+        <org.angmarch.views.NiceSpinner
+            android:id="@+id/spinner_baudrate"
+            android:layout_width="200pt"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:text="115200" />
+
+        <Button
+            android:id="@+id/btn_switch"
+            android:layout_width="120pt"
+            android:layout_height="wrap_content"
+            android:text="连接" />
+
+    </LinearLayout>
+
+
+    <TextView
+        android:id="@+id/label_fun"
+        style="@style/LabelStyle"
+        android:layout_marginTop="16pt"
+        android:text="功能码:"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/area_device" />
+
+    <RadioGroup
+        android:id="@+id/rg_func"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:checkedButton="@id/rb_func01"
+        android:orientation="horizontal"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/area_console"
+        app:layout_constraintTop_toBottomOf="@id/label_fun">
+
+        <RadioButton
+            android:id="@+id/rb_func01"
+            style="@style/FuncRadioButtonStyle"
+            android:layout_gravity="center_vertical"
+            android:text="01" />
+
+        <RadioButton
+            android:id="@+id/rb_func02"
+            style="@style/FuncRadioButtonStyle"
+            android:text="02" />
+
+        <RadioButton
+            android:id="@+id/rb_func03"
+            style="@style/FuncRadioButtonStyle"
+            android:text="03" />
+
+        <RadioButton
+            android:id="@+id/rb_func04"
+            style="@style/FuncRadioButtonStyle"
+            android:text="04" />
+
+        <RadioButton
+            android:id="@+id/rb_func05"
+            style="@style/FuncRadioButtonStyle"
+            android:text="05" />
+
+        <RadioButton
+            android:id="@+id/rb_func06"
+            style="@style/FuncRadioButtonStyle"
+            android:text="06" />
+
+        <RadioButton
+            android:id="@+id/rb_func15"
+            style="@style/FuncRadioButtonStyle"
+            android:text="15" />
+
+        <RadioButton
+            android:id="@+id/rb_func16"
+            style="@style/FuncRadioButtonStyle"
+            android:text="16" />
+
+        <Button
+            android:id="@+id/btn_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="发送" />
+
+    </RadioGroup>
+
+    <LinearLayout
+        android:id="@+id/area_address"
+        style="@style/ParamAreaStyle"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rg_func">
+
+        <TextView
+            style="@style/LabelStyle"
+            android:text="地址：" />
+
+        <EditText
+            android:id="@+id/et_offset"
+            style="@style/EditTextStyle"
+            android:layout_width="400pt"
+            android:hint="寄存器/线圈/输入量"
+            android:inputType="numberDecimal" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/area_amount"
+        style="@style/ParamAreaStyle"
+        app:layout_constraintLeft_toRightOf="@id/area_address"
+        app:layout_constraintTop_toBottomOf="@id/rg_func">
+
+        <TextView
+            style="@style/LabelStyle"
+            android:layout_marginLeft="24dp"
+            android:text="数量：" />
+
+        <EditText
+            android:id="@+id/et_amount"
+            style="@style/EditTextStyle"
+            android:layout_width="200pt"
+            android:hint="数量"
+            android:inputType="numberDecimal" />
+
+    </LinearLayout>
+
+
+    <CheckBox
+        android:id="@+id/cb_coil_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="36dp"
+        android:text="线圈状态(选中为1)"
+        app:layout_constraintBottom_toBottomOf="@id/area_address"
+        app:layout_constraintLeft_toRightOf="@id/area_address"
+        app:layout_constraintTop_toTopOf="@id/area_address" />
+
+    <CheckBox
+        android:id="@+id/cb_hex"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="36dp"
+        android:text="以16进制发送）"
+        app:layout_constraintBottom_toBottomOf="@id/area_address"
+        app:layout_constraintLeft_toRightOf="@id/area_address"
+        app:layout_constraintTop_toTopOf="@id/area_address" />
+
+
+    <LinearLayout
+        android:id="@+id/area_value"
+        style="@style/ParamAreaStyle"
+        android:layout_width="0dp"
+        android:orientation="vertical"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/area_console"
+        app:layout_constraintTop_toBottomOf="@id/area_address">
+
+        <TextView
+            android:id="@+id/label_value"
+            style="@style/LabelStyle"
+            android:text="输出值：" />
+
+        <EditText
+            android:id="@+id/et_single_value"
+            style="@style/EditTextStyle"
+            android:layout_width="match_parent"
+            android:digits="0123456789abcdefABCDEF"
+            android:hint="数值" />
+
+        <EditText
+            android:id="@+id/et_multi_value"
+            style="@style/EditTextStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:digits="0123456789abcdefABCDEF,"
+            android:hint="多个数值,“,”隔开"
+            android:minHeight="90pt"
+            android:singleLine="false" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/area_console"
+        style="@style/ConsoleAreaStyle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintLeft_toRightOf="@id/area_device"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/btn_clear_record"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="清空记录" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/tv_console"
+                style="@style/ConsoleTextStyle"
+                tools:text="输出" />
+
+        </ScrollView>
+
+
+    </LinearLayout>
+
+
+
+
+
+</android.support.constraint.ConstraintLayout>

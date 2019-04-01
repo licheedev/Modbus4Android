@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Modbus4Android</string>
+    <string name="gongnengma_s">功能码：%s</string>
+</resources>

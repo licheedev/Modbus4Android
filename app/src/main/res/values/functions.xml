@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="func_names">
+        <item>01（0x01）读线圈</item>
+        <item>02（0x02）读离散量输入</item>
+        <item>03（0x03）读保持寄存器</item>
+        <item>04（0x04）读输入寄存器</item>
+        <item>05（0x05）写单个线圈</item>
+        <item>06（0x06）写单个寄存器</item>
+        <item>15（0x0F）写多个线圈</item>
+        <item>16（0x10）写多个寄存器</item>
+        <item>16（0x10）写多个寄存器(但只写一个)</item>
+    </string-array>
+
+    <string-array name="func_codes">
+        <item>01</item>
+        <item>02</item>
+        <item>03</item>
+        <item>04</item>
+        <item>05</item>
+        <item>06</item>
+        <item>15</item>
+        <item>16</item>
+        <item>16*</item>
+    </string-array>
+
+
+</resources>

@@ -1,0 +1,39 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 27
+
+    defaultConfig {
+        minSdkVersion 8
+        targetSdkVersion 27
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    api fileTree(dir: 'libs', include: ['*.jar'])
+
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+    // rx全家桶
+    api 'io.reactivex.rxjava2:rxjava:2.2.6'
+    api 'com.trello.rxlifecycle2:rxlifecycle-android:2.2.2'
+    // 串口
+    api 'com.github.licheedev.Android-SerialPort-API:serialport:1.0.1'
+    // modbus4j
+    api 'com.github.licheedev:modbus4j:v3.0.5-alpha1'
+}
+
+apply from: '../jitpack.gradle'
