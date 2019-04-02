@@ -20,7 +20,6 @@ import com.licheedev.demo.modbus.ModbusManager;
 import com.licheedev.modbus4android.ModbusCallback;
 import com.licheedev.modbus4android.ModbusParam;
 import com.licheedev.modbus4android.param.SerialParam;
-import com.licheedev.myutils.LogPlus;
 import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
 import com.serotonin.modbus4j.msg.WriteRegistersResponse;
@@ -264,6 +263,7 @@ public class MainActivity extends BaseActivity {
             case R.id.tv_console:
                 break;
             case R.id.btn_clear_record:
+                mTvConsole.setText("");
                 break;
         }
     }
@@ -371,7 +371,7 @@ public class MainActivity extends BaseActivity {
                         ReadHoldingRegistersResponse readHoldingRegistersResponse) {
                         //short[] shortData = readHoldingRegistersResponse.getShortData();
                         byte[] data = readHoldingRegistersResponse.getData();
-                        LogPlus.e("读到数据", ByteUtil.bytes2HexStr(data));
+                        mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data)+"\n");
                     }
 
                     @Override
