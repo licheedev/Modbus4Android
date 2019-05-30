@@ -3,8 +3,6 @@ package com.licheedev.modbus4android;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
-import com.licheedev.modbus4android.param.SerialParam;
-import com.licheedev.modbus4android.param.TcpParam;
 import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.exception.ModbusInitException;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
@@ -124,13 +122,8 @@ public class ModbusWorker implements IModbusWorker {
         return Observable.create(new ObservableOnSubscribe<ModbusMaster>() {
             @Override
             public void subscribe(ObservableEmitter<ModbusMaster> emitter) throws Exception {
-                ModbusMaster master = null;
-
-                if (param instanceof TcpParam) { // TCP模式
-                    master = param.createModbusMaster();
-                } else if (param instanceof SerialParam) { // 串口模式
-                    master = param.createModbusMaster();
-                }
+                
+                ModbusMaster master = param.createModbusMaster();
 
                 try {
                     if (master == null) {

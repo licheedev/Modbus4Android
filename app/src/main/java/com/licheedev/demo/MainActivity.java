@@ -17,6 +17,7 @@ import com.licheedev.demo.base.ByteUtil;
 import com.licheedev.demo.modbus.DeviceConfig;
 import com.licheedev.demo.modbus.ModbusManager;
 import com.licheedev.modbus4android.ModbusCallback;
+import com.licheedev.modbus4android.ModbusObserver;
 import com.licheedev.modbus4android.ModbusParam;
 import com.licheedev.modbus4android.param.SerialParam;
 import com.serotonin.modbus4j.ModbusMaster;
@@ -28,6 +29,8 @@ import com.serotonin.modbus4j.msg.WriteCoilResponse;
 import com.serotonin.modbus4j.msg.WriteCoilsResponse;
 import com.serotonin.modbus4j.msg.WriteRegisterResponse;
 import com.serotonin.modbus4j.msg.WriteRegistersResponse;
+import com.trello.rxlifecycle2.android.ActivityEvent;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import me.shihao.library.XRadioGroup;
@@ -422,6 +425,7 @@ public class MainActivity extends BaseActivity {
 
         if (checkSlave() && checkOffset() && checkAmount()) {
 
+            // 普通写法
             ModbusManager.get()
                 .readHoldingRegisters(mSalveId, mOffset, mAmount,
                     new ModbusCallback<ReadHoldingRegistersResponse>() {
@@ -442,6 +446,27 @@ public class MainActivity extends BaseActivity {
 
                         }
                     });
+
+            // Rx写法
+            ModbusManager.get()
+                .rxReadHoldingRegisters(mSalveId, mOffset, mAmount)
+                .compose(this.<ReadHoldingRegistersResponse>bindUntilEvent(ActivityEvent.DESTROY))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new ModbusObserver<ReadHoldingRegistersResponse>() {
+                    @Override
+                    public void onSuccess(
+                        ReadHoldingRegistersResponse readHoldingRegistersResponse) {
+                        byte[] data = readHoldingRegistersResponse.getData();
+                        mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+                    }
+
+                    @Override
+                    public void onFailure(Throwable tr) {
+                        appendError("F03", tr);
+                    }
+                });
+
+          
         }
     }
 
