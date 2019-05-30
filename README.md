@@ -4,7 +4,7 @@ Modbus的Android实现，添加对Android串口的支持，支持RxJava操作
 
 ![APP](https://raw.githubusercontent.com/licheedev/Modbus4Android/master/imgs/app.png)
 
-不了解Modbus的，可以阅读一下 [MODBUS通讯协议](https://raw.githubusercontent.com/licheedev/Modbus4Android/master/imgs/modbus_proto_cn.pdf)
+不了解Modbus的，可以阅读一下 [MODBUS通讯协议](https://github.com/licheedev/Modbus4Android/blob/master/imgs/modbus_proto_cn.pdf)
 
 ## 使用
 
