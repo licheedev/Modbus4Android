@@ -48,7 +48,7 @@ public final class AdaptScreenUtils {
      * @param resources 填入super.getResources()
      * @param designShortSize 参考UI图的较短边尺寸
      */
-    public static Resources adaptShorterSize(Resources resources, int designShortSize) {
+    public static Resources adaptShorter(Resources resources, int designShortSize) {
         DisplayMetrics dm = getDisplayMetrics(resources);
 
         int width = dm.widthPixels < dm.heightPixels ? dm.widthPixels : dm.heightPixels;

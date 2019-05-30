@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 27
     defaultConfig {
-        applicationId "com.licheedev.demo"
+        applicationId "com.licheedev.modbusdebug"
         minSdkVersion 19
         targetSdkVersion 27
         versionCode 1
@@ -33,6 +33,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.2'
     // 下拉
     implementation 'com.github.arcadefire:nice-spinner:1.3.5'
+    // 增强版RadioGroup
+    implementation 'com.github.fodroid:XRadioGroup:v1.5'
     
     // 16进制键盘
     implementation 'com.github.licheedev:HexKeyboard:0.1'

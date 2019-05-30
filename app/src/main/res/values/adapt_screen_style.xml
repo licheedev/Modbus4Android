@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--Android默认的字体大小-->
+    <!--<dimen name="text_size_small_material">14sp</dimen>-->
+    <!--<dimen name="text_size_medium_material">18sp</dimen>-->
+    <!--<dimen name="text_size_large_material">22sp</dimen>-->
+
+
+    <!--对普通5英寸1080P手机一般是xxhdpi，对比mdpi是3倍，所以这里的字体对应的弄成3倍的数值-->
+    <!--如果是适配ios的750P分辨的话，对应Android的就是xhdpi，那么就要改下面的数值改成2倍的-->
+
+
+    <!--往App的主题加入下面属性-->
+    <!--<item name="android:textAppearance">@style/MyTextAppearance</item>-->
+    <!--<item name="android:textAppearanceInverse">@style/MyTextAppearanceInverse</item>-->
+    <!--<item name="android:textAppearanceSmall">@style/MyTextAppearanceSmall</item>-->
+    <!--<item name="android:textAppearanceMedium">@style/MyTextAppearanceMedium</item>-->
+    <!--<item name="android:textAppearanceLarge">@style/MyTextAppearanceLarge</item>-->
+    <!--<item name="android:textAppearanceSmallInverse">@style/MyTextAppearanceSmallInverse</item>-->
+    <!--<item name="android:textAppearanceMediumInverse">@style/MyTextAppearanceMediumInverse</item>-->
+    <!--<item name="android:textAppearanceLargeInverse">@style/MyTextAppearanceLargeInverse</item>-->
+    <!--<item name="android:textAppearanceButton">@style/MyTextAppearanceButton</item>-->
+    <!--<item name="android:editTextStyle">@style/MyTextAppearanceEditText</item>-->
+    
+
+    <dimen name="small_text_size">28pt</dimen>
+    <dimen name="medium_text_size">36pt</dimen>
+    <dimen name="large_text_size">44pt</dimen>
+
+    <style name="MyTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/small_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceInverse" parent="TextAppearance.AppCompat.Inverse">
+        <item name="android:textSize">@dimen/small_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceSmall" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textSize">@dimen/small_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceSmallInverse" parent="TextAppearance.AppCompat.Small.Inverse">
+        <item name="android:textSize">@dimen/small_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceMedium" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textSize">@dimen/medium_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceMediumInverse" parent="TextAppearance.AppCompat.Medium.Inverse">
+        <item name="android:textSize">@dimen/medium_text_size</item>
+    </style>
+
+
+    <style name="MyTextAppearanceLarge" parent="TextAppearance.AppCompat.Large">
+        <item name="android:textSize">@dimen/large_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceLargeInverse" parent="TextAppearance.AppCompat.Large.Inverse">
+        <item name="android:textSize">@dimen/large_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceButton" parent="TextAppearance.AppCompat.Button">
+        <item name="android:textSize">@dimen/small_text_size</item>
+    </style>
+
+    <style name="MyTextAppearanceEditText" parent="Widget.AppCompat.EditText">
+        <item name="android:textSize">@dimen/small_text_size</item>
+    </style>
+
+</resources>

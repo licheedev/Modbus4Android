@@ -6,6 +6,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        
         <item name="android:textAppearance">@style/MyTextAppearance</item>
         <item name="android:textAppearanceInverse">@style/MyTextAppearanceInverse</item>
         <item name="android:textAppearanceSmall">@style/MyTextAppearanceSmall</item>
@@ -18,50 +19,6 @@
         <item name="android:editTextStyle">@style/MyTextAppearanceEditText</item>
     </style>
 
-    <!--<dimen name="text_size_large_material">22sp</dimen>-->
-    <!--<dimen name="text_size_medium_material">18sp</dimen>-->
-    <!--<dimen name="text_size_small_material">14sp</dimen>-->
-
-    <style name="MyTextAppearance" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">28pt</item>
-    </style>
-
-    <style name="MyTextAppearanceInverse" parent="TextAppearance.AppCompat.Inverse">
-        <item name="android:textSize">28pt</item>
-    </style>
-
-    <style name="MyTextAppearanceSmall" parent="TextAppearance.AppCompat.Small">
-        <item name="android:textSize">28pt</item>
-    </style>
-
-    <style name="MyTextAppearanceSmallInverse" parent="TextAppearance.AppCompat.Small.Inverse">
-        <item name="android:textSize">28pt</item>
-    </style>
-
-    <style name="MyTextAppearanceMedium" parent="TextAppearance.AppCompat.Medium">
-        <item name="android:textSize">36pt</item>
-    </style>
-
-    <style name="MyTextAppearanceMediumInverse" parent="TextAppearance.AppCompat.Medium.Inverse">
-        <item name="android:textSize">36pt</item>
-    </style>
-
-
-    <style name="MyTextAppearanceLarge" parent="TextAppearance.AppCompat.Large">
-        <item name="android:textSize">44pt</item>
-    </style>
-
-    <style name="MyTextAppearanceLargeInverse" parent="TextAppearance.AppCompat.Large.Inverse">
-        <item name="android:textSize">44pt</item>
-    </style>
-    
-    <style name="MyTextAppearanceButton" parent="TextAppearance.AppCompat.Button">
-        <item name="android:textSize">28pt</item>
-    </style>
-
-    <style name="MyTextAppearanceEditText" parent="Widget.AppCompat.EditText">
-        <item name="android:textSize">28pt</item>
-    </style>
 
     <style name="FuncRadioButtonStyle">
         <item name="android:layout_width">0dp</item>
@@ -88,8 +45,6 @@
     </style>
 
     <style name="ConsoleAreaStyle">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">0dp</item>
         <item name="android:background">#153D5A</item>
         <item name="android:orientation">vertical</item>
         <item name="android:padding">16pt</item>

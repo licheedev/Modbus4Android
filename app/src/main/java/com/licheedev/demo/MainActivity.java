@@ -8,7 +8,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -21,10 +20,20 @@ import com.licheedev.modbus4android.ModbusCallback;
 import com.licheedev.modbus4android.ModbusParam;
 import com.licheedev.modbus4android.param.SerialParam;
 import com.serotonin.modbus4j.ModbusMaster;
+import com.serotonin.modbus4j.msg.ReadCoilsResponse;
+import com.serotonin.modbus4j.msg.ReadDiscreteInputsResponse;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
+import com.serotonin.modbus4j.msg.ReadInputRegistersResponse;
+import com.serotonin.modbus4j.msg.WriteCoilResponse;
+import com.serotonin.modbus4j.msg.WriteCoilsResponse;
+import com.serotonin.modbus4j.msg.WriteRegisterResponse;
 import com.serotonin.modbus4j.msg.WriteRegistersResponse;
+import java.util.ArrayList;
 import java.util.Arrays;
+import me.shihao.library.XRadioGroup;
 import org.angmarch.views.NiceSpinner;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class MainActivity extends BaseActivity {
 
@@ -57,7 +66,7 @@ public class MainActivity extends BaseActivity {
     @BindView(R.id.btn_send)
     Button mBtnSend;
     @BindView(R.id.rg_func)
-    RadioGroup mRgFunc;
+    XRadioGroup mRgFunc;
     @BindView(R.id.et_offset)
     EditText mEtOffset;
     @BindView(R.id.area_address)
@@ -84,12 +93,20 @@ public class MainActivity extends BaseActivity {
     LinearLayout mAreaConsole;
     @BindView(R.id.btn_clear_record)
     Button mBtnClearRecord;
+    @BindView(R.id.et_slave_id)
+    EditText mEtSlaveId;
     private String[] mDevicePaths;
     private String[] mBaudrateStrs;
     private DeviceConfig mDeviceConfig;
     private int mDeviceIndex;
     private int mBaudrateIndex;
     private int[] mBaudrates;
+    private int mOffset;
+    private int mAmount;
+    private int mRegValue;
+    private boolean[] mCoilValues;
+    private short[] mRegValues;
+    private int mSalveId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,13 +114,13 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        mRgFunc.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        mRgFunc.setOnCheckedChangeListener(new XRadioGroup.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-
-                onRadioGroupUpdate(checkedId);
+            public void onCheckedChanged(XRadioGroup xRadioGroup, int i) {
+                onRadioGroupUpdate(i);
             }
         });
+
         onRadioGroupUpdate(mRgFunc.getCheckedRadioButtonId());
 
         mDeviceConfig = DeviceConfig.get();
@@ -206,6 +223,7 @@ public class MainActivity extends BaseActivity {
                 mCbHex.setVisibility(View.GONE);
                 mAreaValue.setVisibility(View.VISIBLE);
                 mEtSingleValue.setVisibility(View.GONE);
+                mEtMultiValue.setHint(R.string.multi_coil_hint);
                 mEtMultiValue.setVisibility(View.VISIBLE);
                 break;
             case R.id.rb_func16:
@@ -215,52 +233,22 @@ public class MainActivity extends BaseActivity {
                 mCbHex.setVisibility(View.VISIBLE);
                 mAreaValue.setVisibility(View.VISIBLE);
                 mEtSingleValue.setVisibility(View.GONE);
+                mEtMultiValue.setHint(R.string.multi_reg_hint);
                 mEtMultiValue.setVisibility(View.VISIBLE);
                 break;
         }
     }
 
     @OnClick({
-        R.id.spinner_devices, R.id.spinner_baudrate, R.id.btn_switch, R.id.label_fun, R.id.btn_send,
-        R.id.rg_func, R.id.et_offset, R.id.et_amount, R.id.area_amount, R.id.cb_coil_state,
-        R.id.cb_hex, R.id.label_value, R.id.et_single_value, R.id.et_multi_value, R.id.area_value,
-        R.id.tv_console, R.id.btn_clear_record
+        R.id.btn_switch, R.id.btn_send, R.id.btn_clear_record
     })
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.spinner_devices:
-                break;
-            case R.id.spinner_baudrate:
-                break;
             case R.id.btn_switch:
                 openDevice();
                 break;
-            case R.id.label_fun:
-                break;
             case R.id.btn_send:
                 trySend();
-                break;
-            case R.id.rg_func:
-                break;
-            case R.id.et_offset:
-                break;
-            case R.id.et_amount:
-                break;
-            case R.id.area_amount:
-                break;
-            case R.id.cb_coil_state:
-                break;
-            case R.id.cb_hex:
-                break;
-            case R.id.label_value:
-                break;
-            case R.id.et_single_value:
-                break;
-            case R.id.et_multi_value:
-                break;
-            case R.id.area_value:
-                break;
-            case R.id.tv_console:
                 break;
             case R.id.btn_clear_record:
                 mTvConsole.setText("");
@@ -268,6 +256,9 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    /**
+     * 打开设备
+     */
     private void openDevice() {
         if (ModbusManager.get().isModbusOpened()) {
             // 关闭设备
@@ -281,7 +272,6 @@ public class MainActivity extends BaseActivity {
 
         mDeviceConfig.updateSerialConfig(path, baudrate);
 
-        // TCP
         // 串口
         ModbusParam serialParam =
             SerialParam.create(path, baudrate).setTimeout(1000).setRetries(0); // 不重试
@@ -313,22 +303,47 @@ public class MainActivity extends BaseActivity {
             mBtnSwitch.setText("断开");
             mSpinnerDevices.setEnabled(false);
             mSpinnerBaudrate.setEnabled(false);
+            mBtnSend.setEnabled(true);
         } else {
             mBtnSwitch.setText("连接");
             mSpinnerDevices.setEnabled(true);
             mSpinnerBaudrate.setEnabled(true);
+            mBtnSend.setEnabled(false);
         }
     }
 
+    /**
+     * 发送数据
+     */
     private void trySend() {
         if (!ModbusManager.get().isModbusOpened()) {
             showOneToast("未打开设备");
             return;
         }
 
+        updteValues();
+
         switch (mRgFunc.getCheckedRadioButtonId()) {
+            case R.id.rb_func01:
+                send01();
+                break;
+            case R.id.rb_func02:
+                send02();
+                break;
             case R.id.rb_func03:
                 send03();
+                break;
+            case R.id.rb_func04:
+                send04();
+                break;
+            case R.id.rb_func05:
+                send05();
+                break;
+            case R.id.rb_func06:
+                send06();
+                break;
+            case R.id.rb_func15:
+                send15();
                 break;
             case R.id.rb_func16:
                 send16();
@@ -339,19 +354,29 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    private void send16() {
+    private void appendError(String func, Throwable tr) {
+        mTvConsole.append(func + "异常:" + tr + "\n");
+    }
 
-        ModbusManager.get()
-            .writeRegisters(0x01, 0x1d, new short[] { 0x0001 },
-                new ModbusCallback<WriteRegistersResponse>() {
+    private void send01() {
+
+        if (checkSlave() && checkOffset() && checkAmount()) {
+
+            final int amount = mAmount;
+
+            ModbusManager.get()
+                .readCoil(mSalveId, mOffset, mAmount, new ModbusCallback<ReadCoilsResponse>() {
                     @Override
-                    public void onSuccess(WriteRegistersResponse writeRegistersResponse) {
-                        // 发送成功
+                    public void onSuccess(ReadCoilsResponse readCoilsResponse) {
+
+                        boolean[] sub =
+                            ArrayUtils.subarray(readCoilsResponse.getBooleanData(), 0, amount);
+                        mTvConsole.append("F01读取：" + ArrayUtils.toString(sub) + "\n");
                     }
 
                     @Override
                     public void onFailure(Throwable tr) {
-
+                        appendError("F01", tr);
                     }
 
                     @Override
@@ -359,30 +384,357 @@ public class MainActivity extends BaseActivity {
 
                     }
                 });
+        }
+    }
+
+    private void send02() {
+        if (checkSlave() && checkOffset() && checkAmount()) {
+
+            final int amount = mAmount;
+
+            ModbusManager.get()
+                .readDiscreteInput(mSalveId, mOffset, mAmount,
+                    new ModbusCallback<ReadDiscreteInputsResponse>() {
+                        @Override
+                        public void onSuccess(
+                            ReadDiscreteInputsResponse readDiscreteInputsResponse) {
+
+                            boolean[] sub =
+                                ArrayUtils.subarray(readDiscreteInputsResponse.getBooleanData(), 0,
+                                    amount);
+                            mTvConsole.append("F02读取：" + ArrayUtils.toString(sub) + "\n");
+                        }
+
+                        @Override
+                        public void onFailure(Throwable tr) {
+                            appendError("F02", tr);
+                        }
+
+                        @Override
+                        public void onFinally() {
+
+                        }
+                    });
+        }
     }
 
     private void send03() {
 
-        ModbusManager.get()
-            .readHoldingRegisters(0x01, 0x01, 2,
-                new ModbusCallback<ReadHoldingRegistersResponse>() {
-                    @Override
-                    public void onSuccess(
-                        ReadHoldingRegistersResponse readHoldingRegistersResponse) {
-                        //short[] shortData = readHoldingRegistersResponse.getShortData();
-                        byte[] data = readHoldingRegistersResponse.getData();
-                        mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data)+"\n");
-                    }
+        if (checkSlave() && checkOffset() && checkAmount()) {
 
-                    @Override
-                    public void onFailure(Throwable tr) {
+            ModbusManager.get()
+                .readHoldingRegisters(mSalveId, mOffset, mAmount,
+                    new ModbusCallback<ReadHoldingRegistersResponse>() {
+                        @Override
+                        public void onSuccess(
+                            ReadHoldingRegistersResponse readHoldingRegistersResponse) {
+                            byte[] data = readHoldingRegistersResponse.getData();
+                            mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+                        }
 
-                    }
+                        @Override
+                        public void onFailure(Throwable tr) {
+                            appendError("F03", tr);
+                        }
 
-                    @Override
-                    public void onFinally() {
+                        @Override
+                        public void onFinally() {
 
-                    }
-                });
+                        }
+                    });
+        }
+    }
+
+    private void send04() {
+
+        if (checkSlave() && checkOffset() && checkAmount()) {
+
+            ModbusManager.get()
+                .readInputRegisters(mSalveId, mOffset, mAmount,
+                    new ModbusCallback<ReadInputRegistersResponse>() {
+                        @Override
+                        public void onSuccess(
+                            ReadInputRegistersResponse readInputRegistersResponse) {
+                            byte[] data = readInputRegistersResponse.getData();
+                            mTvConsole.append("F04读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+                        }
+
+                        @Override
+                        public void onFailure(Throwable tr) {
+                            appendError("F04", tr);
+                        }
+
+                        @Override
+                        public void onFinally() {
+
+                        }
+                    });
+        }
+    }
+
+    private void send05() {
+
+        if (checkSlave() && checkOffset()) {
+
+            ModbusManager.get()
+                .writeCoil(mSalveId, mOffset, mCbCoilState.isChecked(),
+                    new ModbusCallback<WriteCoilResponse>() {
+                        @Override
+                        public void onSuccess(WriteCoilResponse writeCoilResponse) {
+                            mTvConsole.append("F05写入成功\n");
+                        }
+
+                        @Override
+                        public void onFailure(Throwable tr) {
+                            appendError("F05", tr);
+                        }
+
+                        @Override
+                        public void onFinally() {
+
+                        }
+                    });
+        }
+    }
+
+    private void send06() {
+        if (checkSlave() && checkOffset() && checkRegValue()) {
+
+            ModbusManager.get()
+                .writeSingleRegister(mSalveId, mOffset, mRegValue,
+                    new ModbusCallback<WriteRegisterResponse>() {
+                        @Override
+                        public void onSuccess(WriteRegisterResponse writeRegisterResponse) {
+                            mTvConsole.append("F06写入成功\n");
+                        }
+
+                        @Override
+                        public void onFailure(Throwable tr) {
+                            appendError("F06", tr);
+                        }
+
+                        @Override
+                        public void onFinally() {
+
+                        }
+                    });
+        }
+    }
+
+    private void send15() {
+        if (checkSlave() && checkOffset() && checkCoilValues()) {
+
+            ModbusManager.get()
+                .writeCoils(mSalveId, mOffset, mCoilValues,
+                    new ModbusCallback<WriteCoilsResponse>() {
+                        @Override
+                        public void onSuccess(WriteCoilsResponse writeCoilsResponse) {
+                            mTvConsole.append("F15写入成功\n");
+                        }
+
+                        @Override
+                        public void onFailure(Throwable tr) {
+                            appendError("F15", tr);
+                        }
+
+                        @Override
+                        public void onFinally() {
+
+                        }
+                    });
+        }
+    }
+
+    private void send16() {
+
+        if (checkSlave() && checkOffset() && checkRegValues()) {
+
+            ModbusManager.get()
+                .writeRegisters(mSalveId, mOffset, mRegValues,
+                    new ModbusCallback<WriteRegistersResponse>() {
+                        @Override
+                        public void onSuccess(WriteRegistersResponse writeRegistersResponse) {
+                            // 发送成功
+                            mTvConsole.append("F16写入成功\n");
+                        }
+
+                        @Override
+                        public void onFailure(Throwable tr) {
+                            appendError("F07", tr);
+                        }
+
+                        @Override
+                        public void onFinally() {
+
+                        }
+                    });
+        }
+    }
+
+    /**
+     * 更新解析数值
+     */
+    private void updteValues() {
+
+        // 设备地址
+        mSalveId = Integer.MIN_VALUE;
+        try {
+            mSalveId = Integer.parseInt(mEtSlaveId.getText().toString().trim());
+        } catch (NumberFormatException e) {
+            //e.printStackTrace();
+        }
+
+        // 数据地址
+        mOffset = Integer.MIN_VALUE;
+        try {
+            mOffset = Integer.parseInt(mEtOffset.getText().toString().trim());
+        } catch (NumberFormatException e) {
+            //e.printStackTrace();
+        }
+
+        // 寄存器/线圈数量
+        mAmount = Integer.MIN_VALUE;
+        try {
+            mAmount = Integer.parseInt(mEtAmount.getText().toString().trim());
+        } catch (NumberFormatException e) {
+            //e.printStackTrace();
+        }
+
+        // 进制
+        int radix = mCbHex.isChecked() ? 16 : 10;
+
+        mRegValue = Integer.MIN_VALUE;
+        try {
+            int value = Integer.parseInt(mEtSingleValue.getText().toString().trim(), radix);
+            if (value >= 0 && value <= 0xFFFF) {
+                mRegValue = value;
+            }
+        } catch (NumberFormatException e) {
+            //e.printStackTrace();
+        }
+
+        mCoilValues = null;
+        try {
+            String[] split = StringUtils.split(mEtMultiValue.getText().toString().trim(), ',');
+            ArrayList<Integer> result = new ArrayList<>();
+            for (String s : split) {
+                result.add(Integer.parseInt(s.trim()));
+            }
+            boolean[] values = new boolean[result.size()];
+            for (int i = 0; i < values.length; i++) {
+                int v = result.get(i);
+                if (v == 0 || v == 1) {
+                    values[i] = v == 1;
+                } else {
+                    throw new RuntimeException();
+                }
+            }
+
+            if (values.length > 0) {
+                mCoilValues = values;
+            }
+        } catch (Exception e) {
+            //e.printStackTrace();
+        }
+
+        mRegValues = null;
+        try {
+            String[] split = StringUtils.split(mEtMultiValue.getText().toString().trim(), ',');
+            ArrayList<Integer> result = new ArrayList<>();
+            for (String s : split) {
+                result.add(Integer.parseInt(s.trim(), radix));
+            }
+            short[] values = new short[result.size()];
+            for (int i = 0; i < values.length; i++) {
+                int v = result.get(i);
+                if (v >= 0 && v <= 0xffff) {
+                    values[i] = (short) v;
+                } else {
+                    throw new RuntimeException();
+                }
+            }
+            if (values.length > 0) {
+                mRegValues = values;
+            }
+        } catch (Exception e) {
+            //e.printStackTrace();
+        }
+    }
+
+    /**
+     * 检查设备地址
+     *
+     * @return
+     */
+    private boolean checkSlave() {
+        if (mSalveId == Integer.MIN_VALUE) {
+            showOneToast("无效设备地址");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查数据地址
+     *
+     * @return
+     */
+    private boolean checkOffset() {
+        if (mOffset == Integer.MIN_VALUE) {
+            showOneToast("无效地址");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查数量
+     */
+    private boolean checkAmount() {
+
+        if (mAmount == Integer.MIN_VALUE) {
+            showOneToast("无效数量");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查单（寄存器）数值
+     *
+     * @return
+     */
+    private boolean checkRegValue() {
+        if (mRegValue == Integer.MIN_VALUE) {
+            showOneToast("无效输出值");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查多个线圈数值
+     *
+     * @return
+     */
+    private boolean checkCoilValues() {
+        if (mCoilValues == null) {
+            showOneToast("无效输出值");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查多个线圈输出值
+     *
+     * @return
+     */
+    private boolean checkRegValues() {
+        if (mRegValues == null) {
+            showOneToast("无效输出值");
+            return false;
+        }
+        return true;
     }
 }

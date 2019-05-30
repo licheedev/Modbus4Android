@@ -1,4 +1,6 @@
 <resources>
-    <string name="app_name">Modbus4Android</string>
+    <string name="app_name">Modbus调试</string>
     <string name="gongnengma_s">功能码：%s</string>
+    <string name="multi_reg_hint">多个数值(0~0xFFFF(65535)),用“,”隔开</string>
+    <string name="multi_coil_hint">多个数值(0或1),用“,”隔开</string>
 </resources>

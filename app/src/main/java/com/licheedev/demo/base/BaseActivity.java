@@ -21,8 +21,8 @@ public class BaseActivity extends RxAppCompatActivity {
      * @return
      */
     protected Resources toModifyResource(Resources originalResources) {
-        // 建议先在Application里面初始化  ScreenAdapter.init(context);
-        return AdaptScreenUtils.adaptShorterSize(originalResources, 750);
+        // 建议先在Application里面初始化  AdaptScreenUtils.init(context);
+        return AdaptScreenUtils.adaptShorter(originalResources, 750);
     }
 
     @Override
