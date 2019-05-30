@@ -425,27 +425,27 @@ public class MainActivity extends BaseActivity {
 
         if (checkSlave() && checkOffset() && checkAmount()) {
 
-            // 普通写法
-            ModbusManager.get()
-                .readHoldingRegisters(mSalveId, mOffset, mAmount,
-                    new ModbusCallback<ReadHoldingRegistersResponse>() {
-                        @Override
-                        public void onSuccess(
-                            ReadHoldingRegistersResponse readHoldingRegistersResponse) {
-                            byte[] data = readHoldingRegistersResponse.getData();
-                            mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
-                        }
-
-                        @Override
-                        public void onFailure(Throwable tr) {
-                            appendError("F03", tr);
-                        }
-
-                        @Override
-                        public void onFinally() {
-
-                        }
-                    });
+            //// 普通写法
+            //ModbusManager.get()
+            //    .readHoldingRegisters(mSalveId, mOffset, mAmount,
+            //        new ModbusCallback<ReadHoldingRegistersResponse>() {
+            //            @Override
+            //            public void onSuccess(
+            //                ReadHoldingRegistersResponse readHoldingRegistersResponse) {
+            //                byte[] data = readHoldingRegistersResponse.getData();
+            //                mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+            //            }
+            //
+            //            @Override
+            //            public void onFailure(Throwable tr) {
+            //                appendError("F03", tr);
+            //            }
+            //
+            //            @Override
+            //            public void onFinally() {
+            //
+            //            }
+            //        });
 
             // Rx写法
             ModbusManager.get()

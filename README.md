@@ -4,6 +4,11 @@ Modbus的Android实现，添加对Android串口的支持，支持RxJava操作
 
 ![APP](https://raw.githubusercontent.com/licheedev/Modbus4Android/master/imgs/app.png)
 
+
+
+## 使用
+
+### 添加依赖
 ```gradle
 	allprojects {
 		repositories {
@@ -17,8 +22,6 @@ Modbus的Android实现，添加对Android串口的支持，支持RxJava操作
 	}
 
 ```
-
-## 使用
 
 ### 创建管理类单例
 
