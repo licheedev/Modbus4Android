@@ -8,6 +8,7 @@ Modbus的Android实现，添加对Android串口的支持，支持RxJava操作
 
 参考
 > https://github.com/infiniteautomation/modbus4j
+>
 > https://github.com/zgkxzx/Modbus4Android
 
 ## 使用
