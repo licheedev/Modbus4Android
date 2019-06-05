@@ -6,6 +6,10 @@ Modbus的Android实现，添加对Android串口的支持，支持RxJava操作
 
 不了解Modbus的，可以阅读一下 [MODBUS通讯协议](https://github.com/licheedev/Modbus4Android/blob/master/imgs/modbus_proto_cn.pdf)
 
+参考
+https://github.com/infiniteautomation/modbus4j
+https://github.com/zgkxzx/Modbus4Android
+
 ## 使用
 
 ### 添加依赖
