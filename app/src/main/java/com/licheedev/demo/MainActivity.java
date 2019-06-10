@@ -173,74 +173,7 @@ public class MainActivity extends BaseActivity {
         super.onDestroy();
     }
 
-    private void onRadioGroupUpdate(int checkedId) {
-        switch (checkedId) {
-            case R.id.rb_func01:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "01（0x01）读线圈"));
-                mAreaAmount.setVisibility(View.VISIBLE);
-                mCbCoilState.setVisibility(View.GONE);
-                mCbHex.setVisibility(View.GONE);
-                mAreaValue.setVisibility(View.GONE);
-                break;
-            case R.id.rb_func02:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "02（0x02）读离散量输入"));
-                mAreaAmount.setVisibility(View.VISIBLE);
-                mCbCoilState.setVisibility(View.GONE);
-                mCbHex.setVisibility(View.GONE);
-                mAreaValue.setVisibility(View.GONE);
-                break;
-            case R.id.rb_func03:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "03（0x03）读保持寄存器"));
-                mAreaAmount.setVisibility(View.VISIBLE);
-                mCbCoilState.setVisibility(View.GONE);
-                mCbHex.setVisibility(View.GONE);
-                mAreaValue.setVisibility(View.GONE);
-                break;
-            case R.id.rb_func04:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "04（0x04）读输入寄存器"));
-                mAreaAmount.setVisibility(View.VISIBLE);
-                mCbCoilState.setVisibility(View.GONE);
-                mCbHex.setVisibility(View.GONE);
-                mAreaValue.setVisibility(View.GONE);
-                break;
-            case R.id.rb_func05:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "05（0x05）写单个线圈"));
-                mAreaAmount.setVisibility(View.GONE);
-                mCbCoilState.setVisibility(View.VISIBLE);
-                mCbHex.setVisibility(View.GONE);
-                mAreaValue.setVisibility(View.GONE);
-                break;
-            case R.id.rb_func06:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "06（0x06）写单个寄存器"));
-                mAreaAmount.setVisibility(View.GONE);
-                mCbCoilState.setVisibility(View.GONE);
-                mCbHex.setVisibility(View.VISIBLE);
-                mAreaValue.setVisibility(View.VISIBLE);
-                mEtSingleValue.setVisibility(View.VISIBLE);
-                mEtMultiValue.setVisibility(View.GONE);
-                break;
-            case R.id.rb_func15:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "15（0x0F）写多个线圈"));
-                mAreaAmount.setVisibility(View.GONE);
-                mCbCoilState.setVisibility(View.GONE);
-                mCbHex.setVisibility(View.GONE);
-                mAreaValue.setVisibility(View.VISIBLE);
-                mEtSingleValue.setVisibility(View.GONE);
-                mEtMultiValue.setHint(R.string.multi_coil_hint);
-                mEtMultiValue.setVisibility(View.VISIBLE);
-                break;
-            case R.id.rb_func16:
-                mLabelFun.setText(getString(R.string.gongnengma_s, "16（0x10）写多个寄存器"));
-                mAreaAmount.setVisibility(View.GONE);
-                mCbCoilState.setVisibility(View.GONE);
-                mCbHex.setVisibility(View.VISIBLE);
-                mAreaValue.setVisibility(View.VISIBLE);
-                mEtSingleValue.setVisibility(View.GONE);
-                mEtMultiValue.setHint(R.string.multi_reg_hint);
-                mEtMultiValue.setVisibility(View.VISIBLE);
-                break;
-        }
-    }
+
 
     @OnClick({
         R.id.btn_switch, R.id.btn_send, R.id.btn_clear_record
@@ -323,8 +256,6 @@ public class MainActivity extends BaseActivity {
             showOneToast("未打开设备");
             return;
         }
-
-        updteValues();
 
         switch (mRgFunc.getCheckedRadioButtonId()) {
             case R.id.rb_func01:
@@ -465,8 +396,6 @@ public class MainActivity extends BaseActivity {
                         appendError("F03", tr);
                     }
                 });
-
-          
         }
     }
 
@@ -596,10 +525,82 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+
+    private void onRadioGroupUpdate(int checkedId) {
+        switch (checkedId) {
+            case R.id.rb_func01:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "01（0x01）读线圈"));
+                mAreaAmount.setVisibility(View.VISIBLE);
+                mCbCoilState.setVisibility(View.GONE);
+                mCbHex.setVisibility(View.GONE);
+                mAreaValue.setVisibility(View.GONE);
+                break;
+            case R.id.rb_func02:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "02（0x02）读离散量输入"));
+                mAreaAmount.setVisibility(View.VISIBLE);
+                mCbCoilState.setVisibility(View.GONE);
+                mCbHex.setVisibility(View.GONE);
+                mAreaValue.setVisibility(View.GONE);
+                break;
+            case R.id.rb_func03:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "03（0x03）读保持寄存器"));
+                mAreaAmount.setVisibility(View.VISIBLE);
+                mCbCoilState.setVisibility(View.GONE);
+                mCbHex.setVisibility(View.GONE);
+                mAreaValue.setVisibility(View.GONE);
+                break;
+            case R.id.rb_func04:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "04（0x04）读输入寄存器"));
+                mAreaAmount.setVisibility(View.VISIBLE);
+                mCbCoilState.setVisibility(View.GONE);
+                mCbHex.setVisibility(View.GONE);
+                mAreaValue.setVisibility(View.GONE);
+                break;
+            case R.id.rb_func05:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "05（0x05）写单个线圈"));
+                mAreaAmount.setVisibility(View.GONE);
+                mCbCoilState.setVisibility(View.VISIBLE);
+                mCbHex.setVisibility(View.GONE);
+                mAreaValue.setVisibility(View.GONE);
+                break;
+            case R.id.rb_func06:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "06（0x06）写单个寄存器"));
+                mAreaAmount.setVisibility(View.GONE);
+                mCbCoilState.setVisibility(View.GONE);
+                mCbHex.setVisibility(View.VISIBLE);
+                mAreaValue.setVisibility(View.VISIBLE);
+                mEtSingleValue.setVisibility(View.VISIBLE);
+                mEtMultiValue.setVisibility(View.GONE);
+                break;
+            case R.id.rb_func15:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "15（0x0F）写多个线圈"));
+                mAreaAmount.setVisibility(View.GONE);
+                mCbCoilState.setVisibility(View.GONE);
+                mCbHex.setVisibility(View.GONE);
+                mAreaValue.setVisibility(View.VISIBLE);
+                mEtSingleValue.setVisibility(View.GONE);
+                mEtMultiValue.setHint(R.string.multi_coil_hint);
+                mEtMultiValue.setVisibility(View.VISIBLE);
+                break;
+            case R.id.rb_func16:
+                mLabelFun.setText(getString(R.string.gongnengma_s, "16（0x10）写多个寄存器"));
+                mAreaAmount.setVisibility(View.GONE);
+                mCbCoilState.setVisibility(View.GONE);
+                mCbHex.setVisibility(View.VISIBLE);
+                mAreaValue.setVisibility(View.VISIBLE);
+                mEtSingleValue.setVisibility(View.GONE);
+                mEtMultiValue.setHint(R.string.multi_reg_hint);
+                mEtMultiValue.setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
     /**
-     * 更新解析数值
+     * 检查设备地址
+     *
+     * @return
      */
-    private void updteValues() {
+    private boolean checkSlave() {
 
         // 设备地址
         mSalveId = Integer.MIN_VALUE;
@@ -609,21 +610,64 @@ public class MainActivity extends BaseActivity {
             //e.printStackTrace();
         }
 
+        if (mSalveId == Integer.MIN_VALUE) {
+            showOneToast("无效设备地址");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查数据地址
+     *
+     * @return
+     */
+    private boolean checkOffset() {
+
         // 数据地址
         mOffset = Integer.MIN_VALUE;
         try {
-            mOffset = Integer.parseInt(mEtOffset.getText().toString().trim());
+            mOffset = Integer.parseInt(mEtOffset.getText().toString().trim(), 16); // 地址要填16进制
         } catch (NumberFormatException e) {
             //e.printStackTrace();
         }
 
+        if (mOffset == Integer.MIN_VALUE) {
+            showOneToast("无效地址");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查数量
+     */
+    private boolean checkAmount() {
+
         // 寄存器/线圈数量
         mAmount = Integer.MIN_VALUE;
         try {
-            mAmount = Integer.parseInt(mEtAmount.getText().toString().trim());
+            int value = Integer.parseInt(mEtAmount.getText().toString().trim());
+            if (value >= 1 && value <= 255) {
+                mAmount = value;
+            }
         } catch (NumberFormatException e) {
             //e.printStackTrace();
         }
+
+        if (mAmount == Integer.MIN_VALUE) {
+            showOneToast("无效数量");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查单（寄存器）数值
+     *
+     * @return
+     */
+    private boolean checkRegValue() {
 
         // 进制
         int radix = mCbHex.isChecked() ? 16 : 10;
@@ -637,6 +681,20 @@ public class MainActivity extends BaseActivity {
         } catch (NumberFormatException e) {
             //e.printStackTrace();
         }
+
+        if (mRegValue == Integer.MIN_VALUE) {
+            showOneToast("无效输出值");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查多个线圈数值
+     *
+     * @return
+     */
+    private boolean checkCoilValues() {
 
         mCoilValues = null;
         try {
@@ -662,6 +720,23 @@ public class MainActivity extends BaseActivity {
             //e.printStackTrace();
         }
 
+        if (mCoilValues == null) {
+            showOneToast("无效输出值");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查多个线圈输出值
+     *
+     * @return
+     */
+    private boolean checkRegValues() {
+
+        // 进制
+        int radix = mCbHex.isChecked() ? 16 : 10;
+
         mRegValues = null;
         try {
             String[] split = StringUtils.split(mEtMultiValue.getText().toString().trim(), ',');
@@ -684,78 +759,7 @@ public class MainActivity extends BaseActivity {
         } catch (Exception e) {
             //e.printStackTrace();
         }
-    }
 
-    /**
-     * 检查设备地址
-     *
-     * @return
-     */
-    private boolean checkSlave() {
-        if (mSalveId == Integer.MIN_VALUE) {
-            showOneToast("无效设备地址");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 检查数据地址
-     *
-     * @return
-     */
-    private boolean checkOffset() {
-        if (mOffset == Integer.MIN_VALUE) {
-            showOneToast("无效地址");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 检查数量
-     */
-    private boolean checkAmount() {
-
-        if (mAmount == Integer.MIN_VALUE) {
-            showOneToast("无效数量");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 检查单（寄存器）数值
-     *
-     * @return
-     */
-    private boolean checkRegValue() {
-        if (mRegValue == Integer.MIN_VALUE) {
-            showOneToast("无效输出值");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 检查多个线圈数值
-     *
-     * @return
-     */
-    private boolean checkCoilValues() {
-        if (mCoilValues == null) {
-            showOneToast("无效输出值");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 检查多个线圈输出值
-     *
-     * @return
-     */
-    private boolean checkRegValues() {
         if (mRegValues == null) {
             showOneToast("无效输出值");
             return false;

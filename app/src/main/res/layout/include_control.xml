@@ -62,7 +62,7 @@
 
         <TextView
             style="@style/LabelStyle"
-            android:text="设备地址（slave id）：" />
+            android:text="设备地址（slave id，10进制）：" />
 
         <EditText
             android:id="@+id/et_slave_id"
@@ -178,14 +178,17 @@
 
         <TextView
             style="@style/LabelStyle"
-            android:text="地址：" />
+            android:gravity="center_horizontal"
+            android:text="寄存器/线圈/输入量\n地址(16进制)："
+            android:textSize="24pt" />
 
         <EditText
             android:id="@+id/et_offset"
             style="@style/EditTextStyle"
-            android:layout_width="360pt"
-            android:hint="寄存器/线圈/输入量"
-            android:inputType="numberDecimal" />
+            android:layout_width="160pt"
+            android:digits="1234567890ABCDEFabcdef"
+            android:hint="地址"
+            android:maxLength="4" />
 
     </LinearLayout>
 
@@ -198,13 +201,14 @@
 
         <TextView
             style="@style/LabelStyle"
-            android:layout_marginLeft="24dp"
-            android:text="数量：" />
+            android:gravity="center_horizontal"
+            android:text="寄存器/线圈/输入量\n数量(10进制)："
+            android:textSize="24pt" />
 
         <EditText
             android:id="@+id/et_amount"
             style="@style/EditTextStyle"
-            android:layout_width="200pt"
+            android:layout_width="160pt"
             android:hint="数量"
             android:inputType="numberDecimal" />
 
