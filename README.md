@@ -1,6 +1,7 @@
 # Modbus4Android
 Modbus的Android实现，添加对Android串口的支持，支持RxJava操作
 
+[![](https://jitpack.io/v/licheedev/Modbus4Android.svg)](https://jitpack.io/#licheedev/Modbus4Android)
 
 ![APP](https://raw.githubusercontent.com/licheedev/Modbus4Android/master/imgs/app.png)
 
