@@ -47,18 +47,60 @@
 
         <Button
             android:id="@+id/btn_switch"
-            android:layout_width="0dp"
+            android:layout_width="120pt"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="连接" />
 
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/area_tcp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/area_device">
+
+        <TextView
+            style="@style/LabelStyle"
+            android:text="设备IP：" />
+
+        <EditText
+            android:id="@+id/et_host"
+            style="@style/EditTextStyle"
+            android:layout_width="0dp"
+            android:layout_weight="2"
+            android:hint="IP" />
+
+        <TextView
+            style="@style/LabelStyle"
+            android:layout_marginLeft="16pt"
+            android:text="设备端口：" />
+
+        <EditText
+            android:id="@+id/et_port"
+            style="@style/EditTextStyle"
+            android:layout_width="0pt"
+            android:layout_weight="1"
+            android:hint="端口"
+            android:inputType="numberDecimal" />
+
+        <Button
+            android:id="@+id/btn_switch_tcp"
+            android:layout_width="120pt"
+            android:layout_height="wrap_content"
+            android:text="连接" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
         android:id="@+id/area_slave_id"
         style="@style/ParamAreaStyle"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/area_device">
+        app:layout_constraintTop_toBottomOf="@id/area_tcp">
 
         <TextView
             style="@style/LabelStyle"

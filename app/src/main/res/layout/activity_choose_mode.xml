@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <Button
+        android:id="@+id/btn_serial_port"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="16pt"
+        android:layout_weight="1"
+        android:text="串口"
+        android:textSize="100pt" />
+
+
+    <Button
+        android:id="@+id/btn_tcp"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="16pt"
+        android:layout_weight="1"
+        android:text="TCP"
+        android:textSize="100pt" />
+
+
+</LinearLayout>

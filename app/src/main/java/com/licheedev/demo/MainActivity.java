@@ -1,6 +1,9 @@
 package com.licheedev.demo;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.IntDef;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -20,6 +23,8 @@ import com.licheedev.modbus4android.ModbusCallback;
 import com.licheedev.modbus4android.ModbusObserver;
 import com.licheedev.modbus4android.ModbusParam;
 import com.licheedev.modbus4android.param.SerialParam;
+import com.licheedev.modbus4android.param.TcpParam;
+import com.licheedev.myutils.LogPlus;
 import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.msg.ReadCoilsResponse;
 import com.serotonin.modbus4j.msg.ReadDiscreteInputsResponse;
@@ -31,6 +36,8 @@ import com.serotonin.modbus4j.msg.WriteRegisterResponse;
 import com.serotonin.modbus4j.msg.WriteRegistersResponse;
 import com.trello.rxlifecycle2.android.ActivityEvent;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import me.shihao.library.XRadioGroup;
@@ -98,6 +105,14 @@ public class MainActivity extends BaseActivity {
     Button mBtnClearRecord;
     @BindView(R.id.et_slave_id)
     EditText mEtSlaveId;
+    @BindView(R.id.et_host)
+    EditText mEtHost;
+    @BindView(R.id.et_port)
+    EditText mEtPort;
+    @BindView(R.id.btn_switch_tcp)
+    Button mBtnSwitchTcp;
+    @BindView(R.id.area_tcp)
+    LinearLayout mAreaTcp;
     private String[] mDevicePaths;
     private String[] mBaudrateStrs;
     private DeviceConfig mDeviceConfig;
@@ -111,11 +126,30 @@ public class MainActivity extends BaseActivity {
     private short[] mRegValues;
     private int mSalveId;
 
+    public static final int MODE_SERIAL = 1;
+    public static final int MODE_TCP = 2;
+    private int mMode;
+
+    @IntDef({
+        MODE_SERIAL, MODE_TCP
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Mode {
+    }
+
+    public static Intent newIntent(Context context, @Mode int mode) {
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.putExtra("mode", mode);
+        return intent;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+
+        resolveIntent(savedInstanceState);
 
         mRgFunc.setOnCheckedChangeListener(new XRadioGroup.OnCheckedChangeListener() {
             @Override
@@ -167,20 +201,38 @@ public class MainActivity extends BaseActivity {
         updateDeviceSwitchButton();
     }
 
+    private void resolveIntent(Bundle savedInstanceState) {
+        Intent intent = getIntent();
+        mMode = intent.getIntExtra("mode", MODE_SERIAL);
+        if (savedInstanceState != null) {
+            mMode = savedInstanceState.getInt("mode", MODE_SERIAL);
+        }
+
+        LogPlus.e("mode=" + mMode);
+
+        mAreaDevice.setVisibility(mMode == MODE_SERIAL ? View.VISIBLE : View.GONE);
+        mAreaTcp.setVisibility(mMode == MODE_TCP ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt("mode", mMode);
+        super.onSaveInstanceState(outState);
+    }
+
     @Override
     protected void onDestroy() {
         ModbusManager.get().release();
         super.onDestroy();
     }
 
-
-
     @OnClick({
-        R.id.btn_switch, R.id.btn_send, R.id.btn_clear_record
+        R.id.btn_switch, R.id.btn_send, R.id.btn_clear_record, R.id.btn_switch_tcp
     })
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_switch:
+            case R.id.btn_switch_tcp:
                 openDevice();
                 break;
             case R.id.btn_send:
@@ -203,17 +255,33 @@ public class MainActivity extends BaseActivity {
             return;
         }
 
-        String path = mDevicePaths[mDeviceIndex];
-        int baudrate = mBaudrates[mBaudrateIndex];
+        ModbusParam param;
 
-        mDeviceConfig.updateSerialConfig(path, baudrate);
+        if (mMode == MODE_SERIAL) {
+            // 串口
+            String path = mDevicePaths[mDeviceIndex];
+            int baudrate = mBaudrates[mBaudrateIndex];
 
-        // 串口
-        ModbusParam serialParam =
-            SerialParam.create(path, baudrate).setTimeout(1000).setRetries(0); // 不重试
+            mDeviceConfig.updateSerialConfig(path, baudrate);
+            param = SerialParam.create(path, baudrate).setTimeout(1000).setRetries(0); // 不重试
+        } else {
+            // TCP
+            String host = mEtHost.getText().toString().trim();
+            int port = 0;
+            try {
+                port = Integer.parseInt(mEtPort.getText().toString().trim());
+            } catch (NumberFormatException e) {
+                //e.printStackTrace();
+            }
+            param = TcpParam.create(host, port)
+                .setTimeout(1000)
+                .setRetries(0)
+                .setEncapsulated(false)
+                .setKeepAlive(true);
+        }
 
         ModbusManager.get().closeModbusMaster();
-        ModbusManager.get().init(serialParam, new ModbusCallback<ModbusMaster>() {
+        ModbusManager.get().init(param, new ModbusCallback<ModbusMaster>() {
             @Override
             public void onSuccess(ModbusMaster modbusMaster) {
                 showOneToast("打开成功");
@@ -221,7 +289,7 @@ public class MainActivity extends BaseActivity {
 
             @Override
             public void onFailure(Throwable tr) {
-                showOneToast("打开失败");
+                showOneToast("打开失败," + tr);
             }
 
             @Override
@@ -239,11 +307,21 @@ public class MainActivity extends BaseActivity {
             mBtnSwitch.setText("断开");
             mSpinnerDevices.setEnabled(false);
             mSpinnerBaudrate.setEnabled(false);
+
+            mBtnSwitchTcp.setText("断开");
+            mEtHost.setEnabled(false);
+            mEtPort.setEnabled(false);
+
             mBtnSend.setEnabled(true);
         } else {
             mBtnSwitch.setText("连接");
             mSpinnerDevices.setEnabled(true);
             mSpinnerBaudrate.setEnabled(true);
+
+            mBtnSwitchTcp.setText("连接");
+            mEtHost.setEnabled(true);
+            mEtPort.setEnabled(true);
+
             mBtnSend.setEnabled(false);
         }
     }
@@ -524,7 +602,6 @@ public class MainActivity extends BaseActivity {
                     });
         }
     }
-
 
     private void onRadioGroupUpdate(int checkedId) {
         switch (checkedId) {
