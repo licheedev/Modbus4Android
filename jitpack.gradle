@@ -1,6 +1,7 @@
 apply plugin: 'com.github.dcendents.android-maven'
 
 group = 'com.github.licheedev'
+version = '1.0'
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
