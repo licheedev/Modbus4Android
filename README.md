@@ -116,8 +116,8 @@ ModbusManager.get()
 // Rx写法
 ModbusManager.get()
     .rxReadHoldingRegisters(mSalveId, mOffset, mAmount)
-    .compose(this.<ReadHoldingRegistersResponse>bindUntilEvent(ActivityEvent.DESTROY))
     .observeOn(AndroidSchedulers.mainThread())
+    .compose(this.<ReadHoldingRegistersResponse>bindUntilEvent(ActivityEvent.DESTROY))
     .subscribe(new ModbusObserver<ReadHoldingRegistersResponse>() {
         @Override
         public void onSuccess(
