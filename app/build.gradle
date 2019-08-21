@@ -26,8 +26,8 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-//    implementation project(':modbus4android')
-    implementation 'com.github.licheedev:Modbus4Android:0.21'
+    implementation project(':modbus4android')
+//    implementation 'com.github.licheedev:Modbus4Android:0.21'
     // logplus
     implementation 'com.github.licheedev.SomeLibrary:myutils:0.02'
     // gson

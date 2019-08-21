@@ -25,7 +25,7 @@ allprojects {
 }
 
   dependencies {
-        implementation 'com.github.licheedev:Modbus4Android:0.21'
+        implementation 'com.github.licheedev:Modbus4Android:0.3'
 }
 
 ```
@@ -87,6 +87,17 @@ ModbusManager.get().init(serialParam, new ModbusCallback<ModbusMaster>() {
         // todo updateDeviceSwitchButton();
     }
 });
+```
+
+
+### 可选配置
+```java
+// 启用rtu的crc校验（默认就启用）
+ModbusConfig.setEnableRtuCrc(true);
+// 打印数据log（默认全禁用）
+// System.out: MessagingControl.send: 01030000000305cb
+// System.out: MessagingConnection.read: 010306000100020000bd75
+ModbusConfig.setEnableDataLog(true, true);
 ```
 
 ### 功能码操作示例

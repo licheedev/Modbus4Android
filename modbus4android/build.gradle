@@ -33,7 +33,7 @@ dependencies {
     // 串口
     api 'com.github.licheedev.Android-SerialPort-API:serialport:1.0.1'
     // modbus4j
-    api 'com.github.licheedev:modbus4j:v3.0.5-alpha1'
+    api 'com.github.licheedev:modbus4j:v3.0.6-alpha1'
 }
 
 apply from: '../jitpack.gradle'

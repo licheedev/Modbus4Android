@@ -81,16 +81,6 @@ public class AndroidSerialPortWrapper implements SerialPortWrapper {
     }
 
     @Override
-    public int getFlowControlIn() {
-        return 0;
-    }
-
-    @Override
-    public int getFlowControlOut() {
-        return 0;
-    }
-
-    @Override
     public int getDataBits() {
         return 8; // 数据位 8
     }

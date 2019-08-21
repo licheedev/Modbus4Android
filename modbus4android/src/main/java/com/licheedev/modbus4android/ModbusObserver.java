@@ -6,10 +6,6 @@ import com.serotonin.modbus4j.msg.ModbusResponse;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 
-/**
- * 就剩下onNext没实现的Observer
- */
-
 public abstract class ModbusObserver<T extends ModbusResponse> implements Observer<T> {
     @Override
     public void onSubscribe(Disposable d) {
