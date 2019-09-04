@@ -1,7 +1,9 @@
 package com.licheedev.modbus4android;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.exception.ModbusInitException;
@@ -31,6 +33,9 @@ import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * ModbusWorker实现，实现了初始化modbus，并增加了线圈、离散量输入、寄存器的读写方法
@@ -40,16 +45,20 @@ public class ModbusWorker implements IModbusWorker {
     private static final String TAG = "IModbusWorker";
 
     private static final String NO_INIT_MESSAGE = "ModbusMaster hasn't been inited!";
-    private static final String MODBUS_THREAD_RELEASE_MESSAGE =
-        "Modbus-working-thread hasn't been released!";
 
-    protected final Handler mModbusHandler;
-    protected final HandlerThread mModbusThread;
+    private final ExecutorService mRequestExecutor;
     protected final Scheduler mModbusScheduler;
+    private final HandlerThread mModbusThread;
+    private final Handler mModbusHandler;
 
     protected ModbusMaster mModbusMaster;
 
     public ModbusWorker() {
+
+        // modbus请求用的单一线程池
+        mRequestExecutor = Executors.newSingleThreadExecutor();
+
+        // 辅助用的工作线程
         mModbusThread = new HandlerThread("modbus-working-thread");
         mModbusThread.start();
         mModbusHandler = new Handler(mModbusThread.getLooper());
@@ -61,6 +70,7 @@ public class ModbusWorker implements IModbusWorker {
      */
     @Override
     public synchronized void closeModbusMaster() {
+
         if (mModbusMaster != null) {
             mModbusMaster.destroy();
             mModbusMaster = null;
@@ -72,11 +82,19 @@ public class ModbusWorker implements IModbusWorker {
      */
     @Override
     public synchronized void release() {
-        mModbusThread.quitSafely();
+
         if (mModbusMaster != null) {
             mModbusMaster.destroy();
             mModbusMaster = null;
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            mModbusThread.quitSafely();
+        } else {
+            mModbusThread.quit();
+        }
+
+        mRequestExecutor.shutdown();
     }
 
     @Override
@@ -103,13 +121,54 @@ public class ModbusWorker implements IModbusWorker {
         if (mModbusMaster == null) {
             throw new ModbusInitException(NO_INIT_MESSAGE);
         }
-
-        if (mModbusThread.getLooper() == null) {
-            throw new IllegalStateException(MODBUS_THREAD_RELEASE_MESSAGE);
-        }
     }
 
     //<editor-fold desc="初始化Modbbus代码">
+
+    /**
+     * 初始化modbus
+     *
+     * @param param
+     * @return
+     * @throws ModbusInitException
+     */
+    @NonNull
+    public synchronized ModbusMaster syncInit(final ModbusParam param) throws Exception {
+
+        Callable<ModbusMaster> callable = new Callable<ModbusMaster>() {
+            @Override
+            public ModbusMaster call() throws Exception {
+
+                if (mModbusMaster != null) {
+                    mModbusMaster.destroy();
+                    mModbusMaster = null;
+                }
+
+                ModbusMaster master = param.createModbusMaster();
+
+                try {
+                    if (master == null) {
+                        throw new ModbusInitException("Invalid ModbusParam!");
+                    }
+                    master.init();
+                } catch (ModbusInitException e) {
+
+                    Log.w(TAG, "ModbusMaster init failed", e);
+
+                    if (master != null) {
+                        master.destroy();
+                    }
+                    // 再抛出异常
+                    throw e;
+                }
+
+                mModbusMaster = master;
+                return master;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
+    }
 
     /**
      * 初始化modbus
@@ -122,26 +181,11 @@ public class ModbusWorker implements IModbusWorker {
         return Observable.create(new ObservableOnSubscribe<ModbusMaster>() {
             @Override
             public void subscribe(ObservableEmitter<ModbusMaster> emitter) throws Exception {
-                
-                ModbusMaster master = param.createModbusMaster();
 
                 try {
-                    if (master == null) {
-                        throw new ModbusInitException("Invalid ModbusParam!");
-                    }
-                    master.init();
-
-                    mModbusMaster = master;
-
+                    ModbusMaster master = syncInit(param);
                     emitter.onNext(master);
-                } catch (ModbusInitException e) {
-
-                    Log.w(TAG, "ModbusMaster init failed", e);
-
-                    if (master != null) {
-                        master.destroy();
-                        mModbusMaster = null;
-                    }
+                } catch (Exception e) {
 
                     if (!emitter.isDisposed()) {
                         emitter.onError(e);
@@ -259,18 +303,26 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusTransportException
      * @throws ModbusRespException
      */
-    public ReadCoilsResponse syncReadCoil(int slaveId, int start, int len)
-        throws ModbusInitException, ModbusTransportException, ModbusRespException {
+    public ReadCoilsResponse syncReadCoil(final int slaveId, final int start, final int len)
+        throws Exception {
 
-        checkWorkingState();
+        Callable<ReadCoilsResponse> callable = new Callable<ReadCoilsResponse>() {
+            @Override
+            public ReadCoilsResponse call() throws Exception {
 
-        ReadCoilsRequest request = new ReadCoilsRequest(slaveId, start, len);
-        ReadCoilsResponse response = (ReadCoilsResponse) mModbusMaster.send(request);
+                checkWorkingState();
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
-        return response;
+                ReadCoilsRequest request = new ReadCoilsRequest(slaveId, start, len);
+                ReadCoilsResponse response = (ReadCoilsResponse) mModbusMaster.send(request);
+
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+                return response;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -292,7 +344,6 @@ public class ModbusWorker implements IModbusWorker {
                     ReadCoilsResponse response = syncReadCoil(slaveId, start, len);
                     emitter.onNext(response);
                 } catch (Exception e) {
-
                     if (!emitter.isDisposed()) {
                         emitter.onError(e);
                         return;
@@ -332,19 +383,28 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusTransportException
      * @throws ModbusRespException
      */
-    public ReadDiscreteInputsResponse syncReadDiscreteInput(int slaveId, int start, int len)
-        throws ModbusInitException, ModbusTransportException, ModbusRespException {
+    public ReadDiscreteInputsResponse syncReadDiscreteInput(final int slaveId, final int start,
+        final int len) throws Exception {
 
-        checkWorkingState();
+        Callable<ReadDiscreteInputsResponse> callable = new Callable<ReadDiscreteInputsResponse>() {
+            @Override
+            public ReadDiscreteInputsResponse call() throws Exception {
 
-        ReadDiscreteInputsRequest request = new ReadDiscreteInputsRequest(slaveId, start, len);
-        ReadDiscreteInputsResponse response =
-            (ReadDiscreteInputsResponse) mModbusMaster.send(request);
+                checkWorkingState();
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
-        return response;
+                ReadDiscreteInputsRequest request =
+                    new ReadDiscreteInputsRequest(slaveId, start, len);
+                ReadDiscreteInputsResponse response =
+                    (ReadDiscreteInputsResponse) mModbusMaster.send(request);
+
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+                return response;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -410,19 +470,29 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusRespException
      */
     public ReadHoldingRegistersResponse syncReadHoldingRegisters(final int slaveId, final int start,
-        final int len) throws ModbusInitException, ModbusTransportException, ModbusRespException {
+        final int len) throws Exception {
 
-        checkWorkingState();
+        Callable<ReadHoldingRegistersResponse> callable =
+            new Callable<ReadHoldingRegistersResponse>() {
+                @Override
+                public ReadHoldingRegistersResponse call() throws Exception {
 
-        ReadHoldingRegistersRequest request = new ReadHoldingRegistersRequest(slaveId, start, len);
+                    checkWorkingState();
 
-        ReadHoldingRegistersResponse response =
-            (ReadHoldingRegistersResponse) mModbusMaster.send(request);
+                    ReadHoldingRegistersRequest request =
+                        new ReadHoldingRegistersRequest(slaveId, start, len);
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
-        return response;
+                    ReadHoldingRegistersResponse response =
+                        (ReadHoldingRegistersResponse) mModbusMaster.send(request);
+
+                    if (response.isException()) {
+                        throw new ModbusRespException(response);
+                    }
+                    return response;
+                }
+            };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -491,18 +561,27 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusRespException
      */
     public ReadInputRegistersResponse syncReadInputRegisters(final int slaveId, final int start,
-        final int len) throws ModbusInitException, ModbusTransportException, ModbusRespException {
+        final int len) throws Exception {
 
-        checkWorkingState();
+        Callable<ReadInputRegistersResponse> callable = new Callable<ReadInputRegistersResponse>() {
+            @Override
+            public ReadInputRegistersResponse call() throws Exception {
 
-        ReadInputRegistersRequest request = new ReadInputRegistersRequest(slaveId, start, len);
-        ReadInputRegistersResponse response =
-            (ReadInputRegistersResponse) mModbusMaster.send(request);
+                checkWorkingState();
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
-        return response;
+                ReadInputRegistersRequest request =
+                    new ReadInputRegistersRequest(slaveId, start, len);
+                ReadInputRegistersResponse response =
+                    (ReadInputRegistersResponse) mModbusMaster.send(request);
+
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+                return response;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -571,18 +650,26 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusRespException
      */
     public WriteCoilResponse syncWriteCoil(final int slaveId, final int offset, final boolean value)
-        throws ModbusInitException, ModbusTransportException, ModbusRespException {
+        throws Exception {
 
-        checkWorkingState();
+        Callable<WriteCoilResponse> callable = new Callable<WriteCoilResponse>() {
+            @Override
+            public WriteCoilResponse call() throws Exception {
 
-        WriteCoilRequest request = new WriteCoilRequest(slaveId, offset, value);
-        WriteCoilResponse response = (WriteCoilResponse) mModbusMaster.send(request);
+                checkWorkingState();
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
+                WriteCoilRequest request = new WriteCoilRequest(slaveId, offset, value);
+                WriteCoilResponse response = (WriteCoilResponse) mModbusMaster.send(request);
 
-        return response;
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+
+                return response;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -643,18 +730,27 @@ public class ModbusWorker implements IModbusWorker {
      * @return
      */
     public WriteRegisterResponse syncWriteSingleRegister(final int slaveId, final int offset,
-        final int value) throws ModbusInitException, ModbusTransportException, ModbusRespException {
+        final int value) throws Exception {
 
-        checkWorkingState();
+        Callable<WriteRegisterResponse> callable = new Callable<WriteRegisterResponse>() {
+            @Override
+            public WriteRegisterResponse call() throws Exception {
 
-        WriteRegisterRequest request = new WriteRegisterRequest(slaveId, offset, value);
-        WriteRegisterResponse response = (WriteRegisterResponse) mModbusMaster.send(request);
+                checkWorkingState();
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
+                WriteRegisterRequest request = new WriteRegisterRequest(slaveId, offset, value);
+                WriteRegisterResponse response =
+                    (WriteRegisterResponse) mModbusMaster.send(request);
 
-        return response;
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+
+                return response;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -724,19 +820,26 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusRespException
      */
     public WriteCoilsResponse syncWriteCoils(final int slaveId, final int start,
-        final boolean[] values)
-        throws ModbusInitException, ModbusTransportException, ModbusRespException {
+        final boolean[] values) throws Exception {
 
-        checkWorkingState();
+        Callable<WriteCoilsResponse> callable = new Callable<WriteCoilsResponse>() {
+            @Override
+            public WriteCoilsResponse call() throws Exception {
 
-        WriteCoilsRequest request = new WriteCoilsRequest(slaveId, start, values);
-        WriteCoilsResponse response = (WriteCoilsResponse) mModbusMaster.send(request);
+                checkWorkingState();
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
+                WriteCoilsRequest request = new WriteCoilsRequest(slaveId, start, values);
+                WriteCoilsResponse response = (WriteCoilsResponse) mModbusMaster.send(request);
 
-        return response;
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+
+                return response;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -798,19 +901,27 @@ public class ModbusWorker implements IModbusWorker {
      * @return
      */
     public WriteRegistersResponse syncWriteRegisters(final int slaveId, final int start,
-        final short[] values)
-        throws ModbusInitException, ModbusTransportException, ModbusRespException {
+        final short[] values) throws Exception {
 
-        checkWorkingState();
+        Callable<WriteRegistersResponse> callable = new Callable<WriteRegistersResponse>() {
+            @Override
+            public WriteRegistersResponse call() throws Exception {
 
-        WriteRegistersRequest request = new WriteRegistersRequest(slaveId, start, values);
-        WriteRegistersResponse response = (WriteRegistersResponse) mModbusMaster.send(request);
+                checkWorkingState();
 
-        if (response.isException()) {
-            throw new ModbusRespException(response);
-        }
+                WriteRegistersRequest request = new WriteRegistersRequest(slaveId, start, values);
+                WriteRegistersResponse response =
+                    (WriteRegistersResponse) mModbusMaster.send(request);
 
-        return response;
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+
+                return response;
+            }
+        };
+
+        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -872,7 +983,7 @@ public class ModbusWorker implements IModbusWorker {
      * @return
      */
     public WriteRegistersResponse syncWriteRegistersButOne(final int slaveId, final int offset,
-        final int value) throws ModbusInitException, ModbusTransportException, ModbusRespException {
+        final int value) throws Exception {
 
         short[] shorts = { (short) value };
         return syncWriteRegisters(slaveId, offset, shorts);

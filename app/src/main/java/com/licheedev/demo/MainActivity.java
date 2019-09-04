@@ -367,8 +367,13 @@ public class MainActivity extends BaseActivity {
     }
 
     private void appendError(String func, Throwable tr) {
-        mTvConsole.append(func + "异常:" + tr + "\n");
+        appendText(func + "异常:\n" + tr + "\n");
     }
+
+    private void appendText(String text) {
+        mTvConsole.append(text);
+    }
+    
 
     private void send01() {
 
@@ -383,7 +388,7 @@ public class MainActivity extends BaseActivity {
 
                         boolean[] sub =
                             ArrayUtils.subarray(readCoilsResponse.getBooleanData(), 0, amount);
-                        mTvConsole.append("F01读取：" + ArrayUtils.toString(sub) + "\n");
+                        appendText("F01读取：\n" + ArrayUtils.toString(sub) + "\n");
                     }
 
                     @Override
@@ -414,7 +419,7 @@ public class MainActivity extends BaseActivity {
                             boolean[] sub =
                                 ArrayUtils.subarray(readDiscreteInputsResponse.getBooleanData(), 0,
                                     amount);
-                            mTvConsole.append("F02读取：" + ArrayUtils.toString(sub) + "\n");
+                            appendText("F02读取：\n" + ArrayUtils.toString(sub) + "\n");
                         }
 
                         @Override
@@ -442,7 +447,7 @@ public class MainActivity extends BaseActivity {
             //            public void onSuccess(
             //                ReadHoldingRegistersResponse readHoldingRegistersResponse) {
             //                byte[] data = readHoldingRegistersResponse.getData();
-            //                mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+            //                appendText("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
             //            }
             //
             //            @Override
@@ -466,7 +471,7 @@ public class MainActivity extends BaseActivity {
                     public void onSuccess(
                         ReadHoldingRegistersResponse readHoldingRegistersResponse) {
                         byte[] data = readHoldingRegistersResponse.getData();
-                        mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+                        appendText("F03读取：\n" + ByteUtil.bytes2HexStr(data) + "\n");
                     }
 
                     @Override
@@ -488,7 +493,7 @@ public class MainActivity extends BaseActivity {
                         public void onSuccess(
                             ReadInputRegistersResponse readInputRegistersResponse) {
                             byte[] data = readInputRegistersResponse.getData();
-                            mTvConsole.append("F04读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+                            appendText("F04读取：\n" + ByteUtil.bytes2HexStr(data) + "\n");
                         }
 
                         @Override
@@ -513,7 +518,7 @@ public class MainActivity extends BaseActivity {
                     new ModbusCallback<WriteCoilResponse>() {
                         @Override
                         public void onSuccess(WriteCoilResponse writeCoilResponse) {
-                            mTvConsole.append("F05写入成功\n");
+                            appendText("F05写入成功\n");
                         }
 
                         @Override
@@ -537,7 +542,7 @@ public class MainActivity extends BaseActivity {
                     new ModbusCallback<WriteRegisterResponse>() {
                         @Override
                         public void onSuccess(WriteRegisterResponse writeRegisterResponse) {
-                            mTvConsole.append("F06写入成功\n");
+                            appendText("F06写入成功\n");
                         }
 
                         @Override
@@ -561,7 +566,7 @@ public class MainActivity extends BaseActivity {
                     new ModbusCallback<WriteCoilsResponse>() {
                         @Override
                         public void onSuccess(WriteCoilsResponse writeCoilsResponse) {
-                            mTvConsole.append("F15写入成功\n");
+                            appendText("F15写入成功\n");
                         }
 
                         @Override
@@ -587,7 +592,7 @@ public class MainActivity extends BaseActivity {
                         @Override
                         public void onSuccess(WriteRegistersResponse writeRegistersResponse) {
                             // 发送成功
-                            mTvConsole.append("F16写入成功\n");
+                            appendText("F16写入成功\n");
                         }
 
                         @Override
