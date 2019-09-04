@@ -25,7 +25,7 @@ allprojects {
 }
 
   dependencies {
-        implementation 'com.github.licheedev:Modbus4Android:0.3'
+	        implementation 'com.github.licheedev:Modbus4Android:1.0.0'
 }
 
 ```
