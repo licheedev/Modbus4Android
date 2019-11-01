@@ -32,8 +32,11 @@ import io.reactivex.Observer;
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.CompositeException;
 import io.reactivex.functions.Action;
+import io.reactivex.plugins.RxJavaPlugins;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -123,19 +126,128 @@ public class ModbusWorker implements IModbusWorker {
         }
     }
 
+    //<editor-fold desc="一些通用的方法">
+
+    /**
+     * 通用的同步方法
+     *
+     * @param callable
+     * @param <T>
+     * @return
+     * @throws InterruptedException
+     * @throws ModbusInitException
+     * @throws ModbusTransportException
+     * @throws ModbusRespException
+     * @throws ExecutionException
+     */
+    private <T> T doSync(Callable<T> callable)
+        throws InterruptedException, ModbusInitException, ModbusTransportException,
+        ModbusRespException, ExecutionException {
+
+        try {
+            return mRequestExecutor.submit(callable).get();
+        } catch (ExecutionException e) {
+            //e.printStackTrace();
+            Throwable cause = e.getCause();
+            if (cause instanceof ModbusInitException) {
+                throw ((ModbusInitException) cause);
+            } else if (cause instanceof ModbusTransportException) {
+                throw ((ModbusTransportException) cause);
+            } else if (cause instanceof ModbusRespException) {
+                throw ((ModbusRespException) cause);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * Rx发送数据源
+     *
+     * @return
+     */
+    private <T> Observable<T> getRxObservable(final Callable<T> callable) {
+
+        return Observable.create(new ObservableOnSubscribe<T>() {
+            @Override
+            public void subscribe(ObservableEmitter<T> emitter) throws Exception {
+                boolean terminated = false;
+                try {
+                    T t = doSync(callable);
+                    if (!emitter.isDisposed()) {
+                        terminated = true;
+                        emitter.onNext(t);
+                        emitter.onComplete();
+                    }
+                } catch (Throwable t) {
+                    if (terminated) {
+                        RxJavaPlugins.onError(t);
+                    } else if (!emitter.isDisposed()) {
+                        try {
+                            emitter.onError(t);
+                        } catch (Throwable inner) {
+                            RxJavaPlugins.onError(new CompositeException(t, inner));
+                        }
+                    }
+                }
+            }
+        }).subscribeOn(mModbusScheduler);
+    }
+
+    /**
+     * 通用订阅方法
+     *
+     * @param observable
+     * @param callback
+     * @param <M>
+     */
+    private <M extends ModbusResponse> void subscribe(Observable<M> observable,
+        final ModbusCallback<M> callback) {
+        observable
+            // 切换UI线程
+            .observeOn(AndroidSchedulers.mainThread()).doFinally(new Action() {
+            @Override
+            public void run() throws Exception {
+                try {
+                    callback.onFinally();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).subscribe(new ModbusObserver<M>() {
+
+            @Override
+            public void onSuccess(M r) {
+                try {
+                    callback.onSuccess(r);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable tr) {
+                try {
+                    callback.onFailure(tr);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+    //</editor-fold>
+
     //<editor-fold desc="初始化Modbbus代码">
 
     /**
-     * 初始化modbus
+     * 初始化的Callable
      *
      * @param param
      * @return
-     * @throws ModbusInitException
      */
     @NonNull
-    public synchronized ModbusMaster syncInit(final ModbusParam param) throws Exception {
-
-        Callable<ModbusMaster> callable = new Callable<ModbusMaster>() {
+    private Callable<ModbusMaster> callableInit(final ModbusParam param) {
+        return new Callable<ModbusMaster>() {
             @Override
             public ModbusMaster call() throws Exception {
 
@@ -166,8 +278,21 @@ public class ModbusWorker implements IModbusWorker {
                 return master;
             }
         };
+    }
 
-        return mRequestExecutor.submit(callable).get();
+    /**
+     * 初始化modbus
+     *
+     * @param param
+     * @return
+     * @throws ModbusInitException
+     */
+    @NonNull
+    public synchronized ModbusMaster syncInit(final ModbusParam param)
+        throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableInit(param));
     }
 
     /**
@@ -178,24 +303,7 @@ public class ModbusWorker implements IModbusWorker {
      */
     @Override
     public Observable<ModbusMaster> rxInit(final ModbusParam param) {
-        return Observable.create(new ObservableOnSubscribe<ModbusMaster>() {
-            @Override
-            public void subscribe(ObservableEmitter<ModbusMaster> emitter) throws Exception {
-
-                try {
-                    ModbusMaster master = syncInit(param);
-                    emitter.onNext(master);
-                } catch (Exception e) {
-
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableInit(param));
     }
 
     /**
@@ -248,65 +356,12 @@ public class ModbusWorker implements IModbusWorker {
     }
     //</editor-fold>
 
-    /**
-     * 通用订阅方法
-     *
-     * @param observable
-     * @param callback
-     * @param <M>
-     */
-    private <M extends ModbusResponse> void subscribe(Observable<M> observable,
-        final ModbusCallback<M> callback) {
-        observable
-            // 切换UI线程
-            .observeOn(AndroidSchedulers.mainThread()).doFinally(new Action() {
-            @Override
-            public void run() throws Exception {
-                try {
-                    callback.onFinally();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).subscribe(new ModbusObserver<M>() {
-
-            @Override
-            public void onSuccess(M r) {
-                try {
-                    callback.onSuccess(r);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable tr) {
-                try {
-                    callback.onFailure(tr);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
     //<editor-fold desc="01 (0x01)读线圈">
 
-    /**
-     * 01 (0x01)读线圈，同步，需在子线程运行
-     *
-     * @param slaveId 从设备ID
-     * @param start 起始地址
-     * @param len 线圈数量
-     * @return
-     * @throws ModbusInitException
-     * @throws ModbusTransportException
-     * @throws ModbusRespException
-     */
-    public ReadCoilsResponse syncReadCoil(final int slaveId, final int start, final int len)
-        throws Exception {
-
-        Callable<ReadCoilsResponse> callable = new Callable<ReadCoilsResponse>() {
+    @NonNull
+    private Callable<ReadCoilsResponse> callableReadCoil(final int slaveId, final int start,
+        final int len) {
+        return new Callable<ReadCoilsResponse>() {
             @Override
             public ReadCoilsResponse call() throws Exception {
 
@@ -321,8 +376,24 @@ public class ModbusWorker implements IModbusWorker {
                 return response;
             }
         };
+    }
 
-        return mRequestExecutor.submit(callable).get();
+    /**
+     * 01 (0x01)读线圈，同步，需在子线程运行
+     *
+     * @param slaveId 从设备ID
+     * @param start 起始地址
+     * @param len 线圈数量
+     * @return
+     * @throws ModbusInitException
+     * @throws ModbusTransportException
+     * @throws ModbusRespException
+     */
+    public ReadCoilsResponse syncReadCoil(final int slaveId, final int start, final int len)
+        throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableReadCoil(slaveId, start, len));
     }
 
     /**
@@ -335,23 +406,7 @@ public class ModbusWorker implements IModbusWorker {
      */
     public Observable<ReadCoilsResponse> rxReadCoil(final int slaveId, final int start,
         final int len) {
-
-        return Observable.create(new ObservableOnSubscribe<ReadCoilsResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<ReadCoilsResponse> emitter) throws Exception {
-
-                try {
-                    ReadCoilsResponse response = syncReadCoil(slaveId, start, len);
-                    emitter.onNext(response);
-                } catch (Exception e) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableReadCoil(slaveId, start, len));
     }
 
     /**
@@ -372,21 +427,10 @@ public class ModbusWorker implements IModbusWorker {
 
     //<editor-fold desc="02（0x02）读离散量输入">
 
-    /**
-     * 02（0x02）读离散量输入，同步，需在子线程运行
-     *
-     * @param slaveId 从设备ID
-     * @param start 起始地址
-     * @param len 输入数量
-     * @return
-     * @throws ModbusInitException
-     * @throws ModbusTransportException
-     * @throws ModbusRespException
-     */
-    public ReadDiscreteInputsResponse syncReadDiscreteInput(final int slaveId, final int start,
-        final int len) throws Exception {
-
-        Callable<ReadDiscreteInputsResponse> callable = new Callable<ReadDiscreteInputsResponse>() {
+    @NonNull
+    private Callable<ReadDiscreteInputsResponse> callableReadDiscreteInput(final int slaveId,
+        final int start, final int len) {
+        return new Callable<ReadDiscreteInputsResponse>() {
             @Override
             public ReadDiscreteInputsResponse call() throws Exception {
 
@@ -403,8 +447,24 @@ public class ModbusWorker implements IModbusWorker {
                 return response;
             }
         };
+    }
 
-        return mRequestExecutor.submit(callable).get();
+    /**
+     * 02（0x02）读离散量输入，同步，需在子线程运行
+     *
+     * @param slaveId 从设备ID
+     * @param start 起始地址
+     * @param len 输入数量
+     * @return
+     * @throws ModbusInitException
+     * @throws ModbusTransportException
+     * @throws ModbusRespException
+     */
+    public ReadDiscreteInputsResponse syncReadDiscreteInput(final int slaveId, final int start,
+        final int len) throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableReadDiscreteInput(slaveId, start, len));
     }
 
     /**
@@ -418,25 +478,7 @@ public class ModbusWorker implements IModbusWorker {
     public Observable<ReadDiscreteInputsResponse> rxReadDiscreteInput(final int slaveId,
         final int start, final int len) {
 
-        return Observable.create(new ObservableOnSubscribe<ReadDiscreteInputsResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<ReadDiscreteInputsResponse> emitter)
-                throws Exception {
-
-                try {
-                    ReadDiscreteInputsResponse response =
-                        syncReadDiscreteInput(slaveId, start, len);
-                    emitter.onNext(response);
-                } catch (Exception e) {
-
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableReadDiscreteInput(slaveId, start, len));
     }
 
     /**
@@ -458,6 +500,29 @@ public class ModbusWorker implements IModbusWorker {
 
     //<editor-fold desc="03 (0x03)读保持寄存器">
 
+    @NonNull
+    private Callable<ReadHoldingRegistersResponse> callableReadHoldingRegisters(final int slaveId,
+        final int start, final int len) {
+        return new Callable<ReadHoldingRegistersResponse>() {
+            @Override
+            public ReadHoldingRegistersResponse call() throws Exception {
+
+                checkWorkingState();
+
+                ReadHoldingRegistersRequest request =
+                    new ReadHoldingRegistersRequest(slaveId, start, len);
+
+                ReadHoldingRegistersResponse response =
+                    (ReadHoldingRegistersResponse) mModbusMaster.send(request);
+
+                if (response.isException()) {
+                    throw new ModbusRespException(response);
+                }
+                return response;
+            }
+        };
+    }
+
     /**
      * 03 (0x03)读保持寄存器，同步，需在子线程运行
      *
@@ -470,29 +535,9 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusRespException
      */
     public ReadHoldingRegistersResponse syncReadHoldingRegisters(final int slaveId, final int start,
-        final int len) throws Exception {
-
-        Callable<ReadHoldingRegistersResponse> callable =
-            new Callable<ReadHoldingRegistersResponse>() {
-                @Override
-                public ReadHoldingRegistersResponse call() throws Exception {
-
-                    checkWorkingState();
-
-                    ReadHoldingRegistersRequest request =
-                        new ReadHoldingRegistersRequest(slaveId, start, len);
-
-                    ReadHoldingRegistersResponse response =
-                        (ReadHoldingRegistersResponse) mModbusMaster.send(request);
-
-                    if (response.isException()) {
-                        throw new ModbusRespException(response);
-                    }
-                    return response;
-                }
-            };
-
-        return mRequestExecutor.submit(callable).get();
+        final int len) throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+        return doSync(callableReadHoldingRegisters(slaveId, start, len));
     }
 
     /**
@@ -506,28 +551,7 @@ public class ModbusWorker implements IModbusWorker {
     public Observable<ReadHoldingRegistersResponse> rxReadHoldingRegisters(final int slaveId,
         final int start, final int len) {
 
-        return Observable.create(new ObservableOnSubscribe<ReadHoldingRegistersResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<ReadHoldingRegistersResponse> emitter)
-                throws Exception {
-
-                try {
-
-                    ReadHoldingRegistersResponse response =
-                        syncReadHoldingRegisters(slaveId, start, len);
-
-                    emitter.onNext(response);
-                } catch (Exception e) {
-
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableReadHoldingRegisters(slaveId, start, len));
     }
 
     /**
@@ -549,21 +573,10 @@ public class ModbusWorker implements IModbusWorker {
 
     //<editor-fold desc="04（0x04）读输入寄存器">
 
-    /**
-     * 04（0x04）读输入寄存器，同步，需在子线程运行
-     *
-     * @param slaveId 从设备ID
-     * @param start 起始地址
-     * @param len 寄存器数量
-     * @return
-     * @throws ModbusInitException
-     * @throws ModbusTransportException
-     * @throws ModbusRespException
-     */
-    public ReadInputRegistersResponse syncReadInputRegisters(final int slaveId, final int start,
-        final int len) throws Exception {
-
-        Callable<ReadInputRegistersResponse> callable = new Callable<ReadInputRegistersResponse>() {
+    @NonNull
+    private Callable<ReadInputRegistersResponse> callableReadInputRegisters(final int slaveId,
+        final int start, final int len) {
+        return new Callable<ReadInputRegistersResponse>() {
             @Override
             public ReadInputRegistersResponse call() throws Exception {
 
@@ -580,8 +593,24 @@ public class ModbusWorker implements IModbusWorker {
                 return response;
             }
         };
+    }
 
-        return mRequestExecutor.submit(callable).get();
+    /**
+     * 04（0x04）读输入寄存器，同步，需在子线程运行
+     *
+     * @param slaveId 从设备ID
+     * @param start 起始地址
+     * @param len 寄存器数量
+     * @return
+     * @throws ModbusInitException
+     * @throws ModbusTransportException
+     * @throws ModbusRespException
+     */
+    public ReadInputRegistersResponse syncReadInputRegisters(final int slaveId, final int start,
+        final int len) throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableReadInputRegisters(slaveId, start, len));
     }
 
     /**
@@ -595,28 +624,7 @@ public class ModbusWorker implements IModbusWorker {
     public Observable<ReadInputRegistersResponse> rxReadInputRegisters(final int slaveId,
         final int start, final int len) {
 
-        return Observable.create(new ObservableOnSubscribe<ReadInputRegistersResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<ReadInputRegistersResponse> emitter)
-                throws Exception {
-
-                try {
-
-                    ReadInputRegistersResponse response =
-                        syncReadInputRegisters(slaveId, start, len);
-
-                    emitter.onNext(response);
-                } catch (Exception e) {
-
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableReadInputRegisters(slaveId, start, len));
     }
 
     /**
@@ -638,21 +646,10 @@ public class ModbusWorker implements IModbusWorker {
 
     //<editor-fold desc="05（0x05）写单个线圈">
 
-    /**
-     * 05（0x05）写单个线圈，同步，需在子线程运行
-     *
-     * @param slaveId 从设备ID
-     * @param offset 输出地址
-     * @param value 输出值
-     * @return
-     * @throws ModbusInitException
-     * @throws ModbusTransportException
-     * @throws ModbusRespException
-     */
-    public WriteCoilResponse syncWriteCoil(final int slaveId, final int offset, final boolean value)
-        throws Exception {
-
-        Callable<WriteCoilResponse> callable = new Callable<WriteCoilResponse>() {
+    @NonNull
+    private Callable<WriteCoilResponse> callableWriteCoil(final int slaveId, final int offset,
+        final boolean value) {
+        return new Callable<WriteCoilResponse>() {
             @Override
             public WriteCoilResponse call() throws Exception {
 
@@ -668,8 +665,6 @@ public class ModbusWorker implements IModbusWorker {
                 return response;
             }
         };
-
-        return mRequestExecutor.submit(callable).get();
     }
 
     /**
@@ -679,32 +674,33 @@ public class ModbusWorker implements IModbusWorker {
      * @param offset 输出地址
      * @param value 输出值
      * @return
+     * @throws ModbusInitException
+     * @throws ModbusTransportException
+     * @throws ModbusRespException
+     */
+    public WriteCoilResponse syncWriteCoil(final int slaveId, final int offset, final boolean value)
+        throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableWriteCoil(slaveId, offset, value));
+    }
+
+    /**
+     * 05（0x05）写单个线圈
+     *
+     * @param slaveId 从设备ID
+     * @param offset 输出地址
+     * @param value 输出值
+     * @return
      */
     public Observable<WriteCoilResponse> rxWriteCoil(final int slaveId, final int offset,
         final boolean value) {
 
-        return Observable.create(new ObservableOnSubscribe<WriteCoilResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<WriteCoilResponse> emitter) throws Exception {
-
-                try {
-                    WriteCoilResponse response = syncWriteCoil(slaveId, offset, value);
-                    emitter.onNext(response);
-                } catch (Exception e) {
-
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableWriteCoil(slaveId, offset, value));
     }
 
     /**
-     * 05（0x05）写单个线圈，同步，需在子线程运行
+     * 05（0x05）写单个线圈
      *
      * @param slaveId 从设备ID
      * @param offset 输出地址
@@ -721,18 +717,10 @@ public class ModbusWorker implements IModbusWorker {
 
     //<editor-fold desc="06（0x06）写单个寄存器">
 
-    /**
-     * 06 (0x06) 写单个寄存器, 同步，需在子线程运行
-     *
-     * @param slaveId 从设备ID
-     * @param offset 寄存器地址
-     * @param value 寄存器值
-     * @return
-     */
-    public WriteRegisterResponse syncWriteSingleRegister(final int slaveId, final int offset,
-        final int value) throws Exception {
-
-        Callable<WriteRegisterResponse> callable = new Callable<WriteRegisterResponse>() {
+    @NonNull
+    private Callable<WriteRegisterResponse> callableWriteSingleRegister(final int slaveId,
+        final int offset, final int value) {
+        return new Callable<WriteRegisterResponse>() {
             @Override
             public WriteRegisterResponse call() throws Exception {
 
@@ -749,8 +737,21 @@ public class ModbusWorker implements IModbusWorker {
                 return response;
             }
         };
+    }
 
-        return mRequestExecutor.submit(callable).get();
+    /**
+     * 06 (0x06) 写单个寄存器, 同步，需在子线程运行
+     *
+     * @param slaveId 从设备ID
+     * @param offset 寄存器地址
+     * @param value 寄存器值
+     * @return
+     */
+    public WriteRegisterResponse syncWriteSingleRegister(final int slaveId, final int offset,
+        final int value) throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableWriteSingleRegister(slaveId, offset, value));
     }
 
     /**
@@ -764,29 +765,7 @@ public class ModbusWorker implements IModbusWorker {
     public Observable<WriteRegisterResponse> rxWriteSingleRegister(final int slaveId,
         final int offset, final int value) {
 
-        return Observable.create(new ObservableOnSubscribe<WriteRegisterResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<WriteRegisterResponse> emitter)
-                throws Exception {
-
-                //LogPlus.i("发送06，offset=" + offset);
-
-                try {
-
-                    WriteRegisterResponse response =
-                        syncWriteSingleRegister(slaveId, offset, value);
-
-                    emitter.onNext(response);
-                } catch (Exception e) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableWriteSingleRegister(slaveId, offset, value));
     }
 
     /**
@@ -808,21 +787,10 @@ public class ModbusWorker implements IModbusWorker {
 
     //<editor-fold desc="15（0x0F）写多个线圈">
 
-    /**
-     * 15（0x0F）写多个线圈, 同步，需在子线程运行
-     *
-     * @param slaveId 从设备ID
-     * @param start 起始地址
-     * @param values 输出值
-     * @return
-     * @throws ModbusInitException
-     * @throws ModbusTransportException
-     * @throws ModbusRespException
-     */
-    public WriteCoilsResponse syncWriteCoils(final int slaveId, final int start,
-        final boolean[] values) throws Exception {
-
-        Callable<WriteCoilsResponse> callable = new Callable<WriteCoilsResponse>() {
+    @NonNull
+    private Callable<WriteCoilsResponse> callableWriteCoils(final int slaveId, final int start,
+        final boolean[] values) {
+        return new Callable<WriteCoilsResponse>() {
             @Override
             public WriteCoilsResponse call() throws Exception {
 
@@ -838,8 +806,25 @@ public class ModbusWorker implements IModbusWorker {
                 return response;
             }
         };
+    }
 
-        return mRequestExecutor.submit(callable).get();
+    /**
+     * 15（0x0F）写多个线圈, 同步，需在子线程运行
+     *
+     * @param slaveId 从设备ID
+     * @param start 起始地址
+     * @param values 输出值
+     * @return
+     * @throws ModbusInitException
+     * @throws ModbusTransportException
+     * @throws ModbusRespException
+     */
+    public WriteCoilsResponse syncWriteCoils(final int slaveId, final int start,
+        final boolean[] values)
+        throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableWriteCoils(slaveId, start, values));
     }
 
     /**
@@ -853,25 +838,7 @@ public class ModbusWorker implements IModbusWorker {
     public Observable<WriteCoilsResponse> rxWriteCoils(final int slaveId, final int start,
         final boolean[] values) {
 
-        return Observable.create(new ObservableOnSubscribe<WriteCoilsResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<WriteCoilsResponse> emitter) throws Exception {
-
-                try {
-
-                    WriteCoilsResponse response = syncWriteCoils(slaveId, start, values);
-
-                    emitter.onNext(response);
-                } catch (Exception e) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableWriteCoils(slaveId, start, values));
     }
 
     /**
@@ -892,18 +859,10 @@ public class ModbusWorker implements IModbusWorker {
 
     //<editor-fold desc="16（0x10）写多个寄存器">
 
-    /**
-     * 16 (0x10) 写多个寄存器, 同步，需在子线程运行
-     *
-     * @param slaveId 从设备ID
-     * @param start 开始寄存器地址
-     * @param values 寄存器值
-     * @return
-     */
-    public WriteRegistersResponse syncWriteRegisters(final int slaveId, final int start,
-        final short[] values) throws Exception {
-
-        Callable<WriteRegistersResponse> callable = new Callable<WriteRegistersResponse>() {
+    @NonNull
+    private Callable<WriteRegistersResponse> callableWriteRegisters(final int slaveId,
+        final int start, final short[] values) {
+        return new Callable<WriteRegistersResponse>() {
             @Override
             public WriteRegistersResponse call() throws Exception {
 
@@ -920,8 +879,22 @@ public class ModbusWorker implements IModbusWorker {
                 return response;
             }
         };
+    }
 
-        return mRequestExecutor.submit(callable).get();
+    /**
+     * 16 (0x10) 写多个寄存器, 同步，需在子线程运行
+     *
+     * @param slaveId 从设备ID
+     * @param start 开始寄存器地址
+     * @param values 寄存器值
+     * @return
+     */
+    public WriteRegistersResponse syncWriteRegisters(final int slaveId, final int start,
+        final short[] values)
+        throws InterruptedException, ExecutionException, ModbusTransportException,
+        ModbusInitException, ModbusRespException {
+
+        return doSync(callableWriteRegisters(slaveId, start, values));
     }
 
     /**
@@ -935,26 +908,7 @@ public class ModbusWorker implements IModbusWorker {
     public Observable<WriteRegistersResponse> rxWriteRegisters(final int slaveId, final int start,
         final short[] values) {
 
-        return Observable.create(new ObservableOnSubscribe<WriteRegistersResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<WriteRegistersResponse> emitter)
-                throws Exception {
-
-                try {
-
-                    WriteRegistersResponse response = syncWriteRegisters(slaveId, start, values);
-
-                    emitter.onNext(response);
-                } catch (Exception e) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return getRxObservable(callableWriteRegisters(slaveId, start, values));
     }
 
     /**
@@ -1000,27 +954,7 @@ public class ModbusWorker implements IModbusWorker {
     public Observable<WriteRegistersResponse> rxWriteRegistersButOne(final int slaveId,
         final int start, final int value) {
 
-        return Observable.create(new ObservableOnSubscribe<WriteRegistersResponse>() {
-            @Override
-            public void subscribe(ObservableEmitter<WriteRegistersResponse> emitter)
-                throws Exception {
-
-                try {
-
-                    WriteRegistersResponse response =
-                        syncWriteRegistersButOne(slaveId, start, value);
-
-                    emitter.onNext(response);
-                } catch (Exception e) {
-                    if (!emitter.isDisposed()) {
-                        emitter.onError(e);
-                        return;
-                    }
-                }
-
-                emitter.onComplete();
-            }
-        }).subscribeOn(mModbusScheduler);
+        return rxWriteRegisters(slaveId, start, new short[] { (short) value });
     }
 
     /**
