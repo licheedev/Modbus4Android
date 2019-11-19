@@ -2,6 +2,7 @@ package com.licheedev.demo.base;
 
 import android.content.res.Resources;
 import com.kaopiz.kprogresshud.KProgressHUD;
+import com.licheedev.adaptscreen.AdaptScreenEx;
 import com.trello.rxlifecycle2.components.support.RxAppCompatActivity;
 
 public class BaseActivity extends RxAppCompatActivity {
@@ -22,7 +23,7 @@ public class BaseActivity extends RxAppCompatActivity {
      */
     protected Resources toModifyResource(Resources originalResources) {
         // 建议先在Application里面初始化  AdaptScreenUtils.init(context);
-        return AdaptScreenUtils.adaptShorter(originalResources, 750);
+        return AdaptScreenEx.adaptShorter(originalResources, 750);
     }
 
     @Override

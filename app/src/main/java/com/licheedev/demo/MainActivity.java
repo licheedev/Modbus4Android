@@ -9,6 +9,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -53,8 +54,8 @@ public class MainActivity extends BaseActivity {
     NiceSpinner mSpinnerBaudrate;
     @BindView(R.id.btn_switch)
     Button mBtnSwitch;
-    @BindView(R.id.area_device)
-    LinearLayout mAreaDevice;
+    @BindView(R.id.area_serial)
+    LinearLayout mAreaSerial;
     @BindView(R.id.label_fun)
     TextView mLabelFun;
     @BindView(R.id.rb_func01)
@@ -113,6 +114,17 @@ public class MainActivity extends BaseActivity {
     Button mBtnSwitchTcp;
     @BindView(R.id.area_tcp)
     LinearLayout mAreaTcp;
+    @BindView(R.id.spinner_databits)
+    NiceSpinner mSpinnerDatabits;
+    @BindView(R.id.spinner_parity)
+    NiceSpinner mSpinnerParity;
+    @BindView(R.id.spinner_stopbits)
+    NiceSpinner mSpinnerStopbits;
+    @BindView(R.id.area_serial2)
+    LinearLayout mAreaSerial2;
+    @BindView(R.id.btn_more_params)
+    ImageButton mBtnMoreParams;
+
     private String[] mDevicePaths;
     private String[] mBaudrateStrs;
     private DeviceConfig mDeviceConfig;
@@ -129,6 +141,9 @@ public class MainActivity extends BaseActivity {
     public static final int MODE_SERIAL = 1;
     public static final int MODE_TCP = 2;
     private int mMode;
+    private int mDataBits;
+    private int mParity;
+    private int mStopBits;
 
     @IntDef({
         MODE_SERIAL, MODE_TCP
@@ -160,17 +175,23 @@ public class MainActivity extends BaseActivity {
 
         onRadioGroupUpdate(mRgFunc.getCheckedRadioButtonId());
 
+        initSerialWidgets();
+
+        updateDeviceSwitchButton();
+        updateMoreParamsButtonImage();
+    }
+
+    /**
+     * 初始化串口相关的控件
+     */
+    private void initSerialWidgets() {
         mDeviceConfig = DeviceConfig.get();
         mDevicePaths = mDeviceConfig.getDevicePaths();
         mBaudrateStrs = mDeviceConfig.getBaudrateStrs();
         mBaudrates = mDeviceConfig.getBaudrates();
 
+        // 串口地址选择
         mSpinnerDevices.attachDataSource(Arrays.asList(mDevicePaths));
-        mSpinnerBaudrate.attachDataSource(Arrays.asList(mBaudrateStrs));
-
-        mDeviceIndex = mDeviceConfig.findDeviceIndex(mDeviceConfig.getDevice());
-        mBaudrateIndex = mDeviceConfig.findBaudrateIndex(mDeviceConfig.getBaudrate());
-
         mSpinnerDevices.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -182,7 +203,11 @@ public class MainActivity extends BaseActivity {
 
             }
         });
+        mDeviceIndex = mDeviceConfig.findDeviceIndex(mDeviceConfig.getDevice());
+        mSpinnerDevices.setSelectedIndex(mDeviceIndex);
 
+        // 波特率选择
+        mSpinnerBaudrate.attachDataSource(Arrays.asList(mBaudrateStrs));
         mSpinnerBaudrate.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -194,11 +219,59 @@ public class MainActivity extends BaseActivity {
 
             }
         });
-
-        mSpinnerDevices.setSelectedIndex(mDeviceIndex);
+        mBaudrateIndex = mDeviceConfig.findBaudrateIndex(mDeviceConfig.getBaudrate());
         mSpinnerBaudrate.setSelectedIndex(mBaudrateIndex);
 
-        updateDeviceSwitchButton();
+        // 数据位
+        final int[] dataBitsArray = { 5, 6, 7, 8 };
+        mSpinnerDatabits.attachDataSource(Arrays.asList("5", "6", "7", "8"));
+        mSpinnerDatabits.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mDataBits = dataBitsArray[position];
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        mDataBits = dataBitsArray[3];
+        mSpinnerDatabits.setSelectedIndex(3);
+
+        // 校验位
+        final int[] parityArray = { 0, 1, 2 };
+        mSpinnerParity.attachDataSource(Arrays.asList("0 (NONE)", "1 (ODD)", "2 (EVEN)"));
+        mSpinnerParity.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mParity = parityArray[position];
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        mParity = parityArray[0];
+        mSpinnerParity.setSelectedIndex(0);
+
+        // 停止位
+        final int[] stopBitsArray = { 1, 2 };
+        mSpinnerStopbits.attachDataSource(Arrays.asList("1", "2"));
+        mSpinnerStopbits.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mStopBits = stopBitsArray[position];
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        mStopBits = stopBitsArray[0];
+        mSpinnerStopbits.setSelectedIndex(0);
     }
 
     private void resolveIntent(Bundle savedInstanceState) {
@@ -206,17 +279,23 @@ public class MainActivity extends BaseActivity {
         mMode = intent.getIntExtra("mode", MODE_SERIAL);
         if (savedInstanceState != null) {
             mMode = savedInstanceState.getInt("mode", MODE_SERIAL);
+            //mDataBits = savedInstanceState.getInt("dataBits", 8);
+            //mParity = savedInstanceState.getInt("parity", 0);
+            //mStopBits = savedInstanceState.getInt("stopBits", 1);
         }
 
         LogPlus.e("mode=" + mMode);
 
-        mAreaDevice.setVisibility(mMode == MODE_SERIAL ? View.VISIBLE : View.GONE);
+        mAreaSerial.setVisibility(mMode == MODE_SERIAL ? View.VISIBLE : View.GONE);
         mAreaTcp.setVisibility(mMode == MODE_TCP ? View.VISIBLE : View.GONE);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putInt("mode", mMode);
+        //outState.putInt("dataBits", mDataBits);
+        //outState.putInt("parity", mParity);
+        //outState.putInt("stopBits", mStopBits);
         super.onSaveInstanceState(outState);
     }
 
@@ -227,10 +306,22 @@ public class MainActivity extends BaseActivity {
     }
 
     @OnClick({
-        R.id.btn_switch, R.id.btn_send, R.id.btn_clear_record, R.id.btn_switch_tcp
+        R.id.btn_switch, R.id.btn_send, R.id.btn_clear_record, R.id.btn_switch_tcp,
+        R.id.btn_more_params
     })
     public void onClick(View view) {
         switch (view.getId()) {
+            case R.id.btn_more_params: {
+
+                if (mAreaSerial2.getVisibility() == View.VISIBLE) {
+                    mAreaSerial2.setVisibility(View.GONE);
+                } else {
+                    mAreaSerial2.setVisibility(View.VISIBLE);
+                }
+
+                updateMoreParamsButtonImage();
+                break;
+            }
             case R.id.btn_switch:
             case R.id.btn_switch_tcp:
                 openDevice();
@@ -242,6 +333,15 @@ public class MainActivity extends BaseActivity {
                 mTvConsole.setText("");
                 break;
         }
+    }
+
+    /**
+     * 更新更多参数按钮的图标
+     */
+    private void updateMoreParamsButtonImage() {
+        mBtnMoreParams.setImageResource(mAreaSerial2.getVisibility() == View.VISIBLE
+            ? R.drawable.ic_keyboard_arrow_up_black_32dp
+            : R.drawable.ic_keyboard_arrow_down_black_32dp);
     }
 
     /**
@@ -263,7 +363,11 @@ public class MainActivity extends BaseActivity {
             int baudrate = mBaudrates[mBaudrateIndex];
 
             mDeviceConfig.updateSerialConfig(path, baudrate);
-            param = SerialParam.create(path, baudrate).setTimeout(1000).setRetries(0); // 不重试
+            param = SerialParam.create(path, baudrate) // 串口地址和波特率
+                .setDataBits(mDataBits) // 数据位
+                .setParity(mParity) // 校验位
+                .setStopBits(mStopBits) // 停止位
+                .setTimeout(1000).setRetries(0); // 不重试
         } else {
             // TCP
             String host = mEtHost.getText().toString().trim();
@@ -303,10 +407,16 @@ public class MainActivity extends BaseActivity {
      * 切换界面状态
      */
     private void updateDeviceSwitchButton() {
-        if (ModbusManager.get().isModbusOpened()) {
+        boolean modbusOpened = ModbusManager.get().isModbusOpened();
+
+        if (modbusOpened) {
             mBtnSwitch.setText("断开");
             mSpinnerDevices.setEnabled(false);
             mSpinnerBaudrate.setEnabled(false);
+            mAreaSerial2.setEnabled(false);
+            mSpinnerDatabits.setEnabled(false);
+            mSpinnerParity.setEnabled(false);
+            mSpinnerStopbits.setEnabled(false);
 
             mBtnSwitchTcp.setText("断开");
             mEtHost.setEnabled(false);
@@ -317,6 +427,10 @@ public class MainActivity extends BaseActivity {
             mBtnSwitch.setText("连接");
             mSpinnerDevices.setEnabled(true);
             mSpinnerBaudrate.setEnabled(true);
+            mAreaSerial2.setEnabled(true);
+            mSpinnerDatabits.setEnabled(true);
+            mSpinnerParity.setEnabled(true);
+            mSpinnerStopbits.setEnabled(true);
 
             mBtnSwitchTcp.setText("连接");
             mEtHost.setEnabled(true);
@@ -373,7 +487,6 @@ public class MainActivity extends BaseActivity {
     private void appendText(String text) {
         mTvConsole.append(text);
     }
-    
 
     private void send01() {
 

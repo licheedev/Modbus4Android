@@ -39,6 +39,9 @@ dependencies {
     // rx
     implementation 'com.trello.rxlifecycle2:rxlifecycle-components:2.1.0'
     
+    // 屏幕适配
+    implementation 'com.github.licheedev:AdaptScreen:1.0.0'
+    
 
     // 黄油刀
     implementation 'com.jakewharton:butterknife:8.8.1'

@@ -25,7 +25,7 @@ allprojects {
 }
 
   dependencies {
-	        implementation 'com.github.licheedev:Modbus4Android:1.0.1'
+	        implementation 'com.github.licheedev:Modbus4Android:2.0.0'
 }
 
 ```
@@ -67,8 +67,34 @@ public class ModbusManager extends ModbusWorker {
 
 ### 开启设备
 ```java
-ModbusParam serialParam =
-    SerialParam.create(devicePath, baudrate).setTimeout(1000).setRetries(0); // 不重试
+ModbusParam param;
+
+if (mMode == MODE_SERIAL) {
+    // 串口
+    String path = mDevicePaths[mDeviceIndex];
+    int baudrate = mBaudrates[mBaudrateIndex];
+
+    mDeviceConfig.updateSerialConfig(path, baudrate);
+    param = SerialParam.create(path, baudrate) // 串口地址和波特率
+        .setDataBits(mDataBits) // 数据位
+        .setParity(mParity) // 校验位
+        .setStopBits(mStopBits) // 停止位
+        .setTimeout(1000).setRetries(0); // 不重试
+} else {
+    // TCP
+    String host = mEtHost.getText().toString().trim();
+    int port = 0;
+    try {
+        port = Integer.parseInt(mEtPort.getText().toString().trim());
+    } catch (NumberFormatException e) {
+        //e.printStackTrace();
+    }
+    param = TcpParam.create(host, port)
+        .setTimeout(1000)
+        .setRetries(0)
+        .setEncapsulated(false)
+        .setKeepAlive(true);
+}
 
 ModbusManager.get().closeModbusMaster(); // 先关闭一下
 ModbusManager.get().init(serialParam, new ModbusCallback<ModbusMaster>() {
