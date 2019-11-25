@@ -1,8 +1,5 @@
 package com.licheedev.modbus4android;
 
-import android.os.Build;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import com.serotonin.modbus4j.ModbusMaster;
@@ -29,16 +26,17 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
-import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.CompositeException;
 import io.reactivex.functions.Action;
 import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.schedulers.Schedulers;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * ModbusWorker实现，实现了初始化modbus，并增加了线圈、离散量输入、寄存器的读写方法
@@ -50,9 +48,6 @@ public class ModbusWorker implements IModbusWorker {
     private static final String NO_INIT_MESSAGE = "ModbusMaster hasn't been inited!";
 
     private final ExecutorService mRequestExecutor;
-    protected final Scheduler mModbusScheduler;
-    private final HandlerThread mModbusThread;
-    private final Handler mModbusHandler;
 
     protected ModbusMaster mModbusMaster;
 
@@ -60,12 +55,6 @@ public class ModbusWorker implements IModbusWorker {
 
         // modbus请求用的单一线程池
         mRequestExecutor = Executors.newSingleThreadExecutor();
-
-        // 辅助用的工作线程
-        mModbusThread = new HandlerThread("modbus-working-thread");
-        mModbusThread.start();
-        mModbusHandler = new Handler(mModbusThread.getLooper());
-        mModbusScheduler = AndroidSchedulers.from(mModbusThread.getLooper());
     }
 
     /**
@@ -91,12 +80,6 @@ public class ModbusWorker implements IModbusWorker {
             mModbusMaster = null;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            mModbusThread.quitSafely();
-        } else {
-            mModbusThread.quit();
-        }
-
         mRequestExecutor.shutdown();
     }
 
@@ -108,14 +91,6 @@ public class ModbusWorker implements IModbusWorker {
     @Override
     public synchronized boolean isModbusOpened() {
         return getModbusMaster() != null;
-    }
-
-    public Scheduler getModbusScheduler() {
-        return mModbusScheduler;
-    }
-
-    public Handler getModbusHandler() {
-        return mModbusHandler;
     }
 
     @Override
@@ -144,8 +119,16 @@ public class ModbusWorker implements IModbusWorker {
         throws InterruptedException, ModbusInitException, ModbusTransportException,
         ModbusRespException, ExecutionException {
 
+        Future<T> submit = null;
         try {
-            return mRequestExecutor.submit(callable).get();
+            submit = mRequestExecutor.submit(callable);
+            return submit.get();
+        } catch (InterruptedException e) {
+            if (submit != null) {
+                submit.cancel(true);
+            }
+            Thread.currentThread().interrupt();
+            throw e;
         } catch (ExecutionException e) {
             //e.printStackTrace();
             Throwable cause = e.getCause();
@@ -191,7 +174,7 @@ public class ModbusWorker implements IModbusWorker {
                     }
                 }
             }
-        }).subscribeOn(mModbusScheduler);
+        }).subscribeOn(Schedulers.io());
     }
 
     /**
