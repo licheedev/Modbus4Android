@@ -1,5 +1,6 @@
 package com.licheedev.modbus4android;
 
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import com.serotonin.modbus4j.ModbusMaster;
@@ -50,6 +51,8 @@ public class ModbusWorker implements IModbusWorker {
     private final ExecutorService mRequestExecutor;
 
     protected ModbusMaster mModbusMaster;
+    private long mSendTime;
+    private long mSendIntervalTime;
 
     public ModbusWorker() {
 
@@ -115,13 +118,33 @@ public class ModbusWorker implements IModbusWorker {
      * @throws ModbusRespException
      * @throws ExecutionException
      */
-    private <T> T doSync(Callable<T> callable)
+    private <T> T doSync(final Callable<T> callable)
         throws InterruptedException, ModbusInitException, ModbusTransportException,
         ModbusRespException, ExecutionException {
 
         Future<T> submit = null;
         try {
-            submit = mRequestExecutor.submit(callable);
+
+            Callable<T> finalCallable = callable;
+
+            if (getSendIntervalTime() > 0) {
+                finalCallable = new Callable<T>() {
+                    @Override
+                    public T call() throws Exception {
+                        if (mSendTime > 0) {
+                            long offset =
+                                (getSendIntervalTime() - SystemClock.uptimeMillis() - mSendTime);
+                            if (offset > 0) {
+                                SystemClock.sleep(offset);
+                            }
+                        }
+                        T result = callable.call();
+                        mSendTime = SystemClock.uptimeMillis();
+                        return result;
+                    }
+                };
+            }
+            submit = mRequestExecutor.submit(finalCallable);
             return submit.get();
         } catch (InterruptedException e) {
             if (submit != null) {
@@ -142,6 +165,31 @@ public class ModbusWorker implements IModbusWorker {
                 throw e;
             }
         }
+    }
+
+    /**
+     * 发送命令间隔时间
+     *
+     * @return
+     */
+    protected long getSendIntervalTime() {
+        return mSendIntervalTime;
+    }
+
+    /**
+     * 设置两次发送命令之间必须要等待的时间
+     *
+     * @param ms
+     * @return
+     */
+    public void setSendIntervalTime(long ms) {
+
+        if (ms < 0) {
+            throw new IllegalArgumentException(
+                "Send interval time should not be negative, but now ms=" + ms);
+        }
+
+        mSendIntervalTime = ms;
     }
 
     /**
@@ -234,6 +282,9 @@ public class ModbusWorker implements IModbusWorker {
             @Override
             public ModbusMaster call() throws Exception {
 
+                // 重置发送时间
+                mSendTime = 0;
+
                 if (mModbusMaster != null) {
                     mModbusMaster.destroy();
                     mModbusMaster = null;
@@ -286,7 +337,7 @@ public class ModbusWorker implements IModbusWorker {
      */
     @Override
     public Observable<ModbusMaster> rxInit(final ModbusParam param) {
-        return getRxObservable(callableInit(param));
+        return getRxObservable(callableInit(param)).subscribeOn(Schedulers.io());
     }
 
     /**
