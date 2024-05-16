@@ -150,25 +150,6 @@ ModbusManager.get()
 
             }
         });
-
-// Rx写法
-ModbusManager.get()
-    .rxReadHoldingRegisters(mSalveId, mOffset, mAmount)
-    .observeOn(AndroidSchedulers.mainThread())
-    .compose(this.<ReadHoldingRegistersResponse>bindUntilEvent(ActivityEvent.DESTROY))
-    .subscribe(new ModbusObserver<ReadHoldingRegistersResponse>() {
-        @Override
-        public void onSuccess(
-            ReadHoldingRegistersResponse readHoldingRegistersResponse) {
-            byte[] data = readHoldingRegistersResponse.getData();
-            mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
-        }
-
-        @Override
-        public void onFailure(Throwable tr) {
-            appendError("F03", tr);
-        }
-    });
 ```
 
 其他功能码的用法，可以参考Demo的[MainActivity.java](https://github.com/licheedev/Modbus4Android/blob/master/app/src/main/java/com/licheedev/demo/MainActivity.java)
@@ -202,7 +183,7 @@ ModbusManager.get()
 ```
 
 #### Kotlin协程用法
-复制[ModbusWorkers.kt](https://github.com/licheedev/Modbus4Android/tree/master/app/src/main/java/com/licheedev/impl/kotlin/ModbusWorkers.kt)相关文件到自己的项目中
+复制[ModbusWorkers.kt](https://github.com/licheedev/Modbus4Android/tree/master/app/src/main/java/com/licheedev/impl/kotlin/ModbusWorkers.kt)文件到自己的项目中
 ```kotlin
 // 协程写法
 lifecycleScope.launch {
