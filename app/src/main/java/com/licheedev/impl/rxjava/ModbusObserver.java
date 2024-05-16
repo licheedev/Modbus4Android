@@ -1,5 +1,6 @@
-package com.licheedev.modbus4android;
+package com.licheedev.impl.rxjava;
 
+import com.licheedev.modbus4android.ModbusRespException;
 import com.serotonin.modbus4j.exception.ModbusInitException;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
 import com.serotonin.modbus4j.msg.ModbusResponse;

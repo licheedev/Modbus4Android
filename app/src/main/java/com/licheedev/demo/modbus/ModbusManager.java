@@ -1,8 +1,9 @@
 package com.licheedev.demo.modbus;
 
-import com.licheedev.modbus4android.ModbusWorker;
+import com.licheedev.impl.rxjava.RxModbusWorker;
 
-public class ModbusManager extends ModbusWorker {
+//public class ModbusManager extends ModbusWorker {
+public class ModbusManager extends RxModbusWorker {
 
     private static volatile ModbusManager sInstance;
 
@@ -30,7 +31,7 @@ public class ModbusManager extends ModbusWorker {
         super.release();
         sInstance = null;
     }
-    
+
     //
     ///**
     // * 初始化modbus

@@ -1,30 +1,11 @@
 package com.licheedev.demo.base;
 
-import android.content.res.Resources;
 import com.kaopiz.kprogresshud.KProgressHUD;
-import com.licheedev.adaptscreen.AdaptScreenEx;
 import com.trello.rxlifecycle2.components.support.RxAppCompatActivity;
 
 public class BaseActivity extends RxAppCompatActivity {
 
     private KProgressHUD mPleaseWait;
-
-    @Override
-    public Resources getResources() {
-        Resources resources = super.getResources();
-        return toModifyResource(resources);
-    }
-
-    /**
-     * 修改Resources
-     *
-     * @param originalResources 没动过手脚的Resources
-     * @return
-     */
-    protected Resources toModifyResource(Resources originalResources) {
-        // 建议先在Application里面初始化  AdaptScreenUtils.init(context);
-        return AdaptScreenEx.adaptShorter(originalResources, 750);
-    }
 
     @Override
     protected void onStop() {

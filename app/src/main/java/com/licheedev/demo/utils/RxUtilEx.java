@@ -1,6 +1,6 @@
 package com.licheedev.demo.utils;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
@@ -14,7 +14,7 @@ import io.reactivex.schedulers.Schedulers;
 import java.util.concurrent.TimeUnit;
 
 public class RxUtilEx {
-
+    
     public static <T> ObservableTransformer<T, T> rxIoMain() {
         return new ObservableTransformer<T, T>() {
             public ObservableSource<T> apply(@NonNull Observable<T> upstream) {

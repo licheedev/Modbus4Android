@@ -1,5 +1,5 @@
 # Modbus4Android
-Modbus的Android实现，添加对Android串口（RTU）的支持，支持RxJava操作
+Modbus的Android实现，添加对Android串口（RTU）的支持
 
 [![](https://jitpack.io/v/licheedev/Modbus4Android.svg)](https://jitpack.io/#licheedev/Modbus4Android)
 
@@ -25,7 +25,7 @@ allprojects {
 }
 
   dependencies {
-	        implementation 'com.github.licheedev:Modbus4Android:2.0.2'
+	        implementation 'com.github.licheedev:Modbus4Android:3.0.0'
 }
 
 ```
@@ -127,6 +127,7 @@ ModbusConfig.setEnableDataLog(true, true);
 ```
 
 ### 功能码操作示例
+#### 普通用法
 ```java
 // 普通写法
 ModbusManager.get()
@@ -171,6 +172,51 @@ ModbusManager.get()
 ```
 
 其他功能码的用法，可以参考Demo的[MainActivity.java](https://github.com/licheedev/Modbus4Android/blob/master/app/src/main/java/com/licheedev/demo/MainActivity.java)
+
+#### RxJava用法（2.0，其他版本按需修改）
+复制[rxjava](https://github.com/licheedev/Modbus4Android/tree/master/app/src/main/java/com/licheedev/impl/rxjava)相关文件到自己的项目中
+
+```java
+// 修改实现方式
+//public class ModbusManager extends ModbusWorker {}
+public class ModbusManager extends RxModbusWorker {}
+
+// Rx写法
+ModbusManager.get()
+    .rxReadHoldingRegisters(mSalveId, mOffset, mAmount)
+    .observeOn(AndroidSchedulers.mainThread())
+    .compose(this.<ReadHoldingRegistersResponse>bindUntilEvent(ActivityEvent.DESTROY))
+    .subscribe(new ModbusObserver<ReadHoldingRegistersResponse>() {
+        @Override
+        public void onSuccess(
+            ReadHoldingRegistersResponse readHoldingRegistersResponse) {
+            byte[] data = readHoldingRegistersResponse.getData();
+            mTvConsole.append("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n");
+        }
+
+        @Override
+        public void onFailure(Throwable tr) {
+            appendError("F03", tr);
+        }
+    });
+```
+
+#### Kotlin协程用法
+复制[ModbusWorkers.kt](https://github.com/licheedev/Modbus4Android/tree/master/app/src/main/java/com/licheedev/impl/kotlin/ModbusWorkers.kt)相关文件到自己的项目中
+```kotlin
+// 协程写法
+lifecycleScope.launch {
+    try {
+        val response =
+            ModbusManager.get().awaitReadHoldingRegisters(mSalveId, mOffset, mAmount)
+        val data: ByteArray = response.data
+        appendText("F03读取：" + ByteUtil.bytes2HexStr(data) + "\n")
+    } catch (e: Exception) {
+        appendError("F03", e)
+    }
+}
+```
+
 
 
 ## 截图

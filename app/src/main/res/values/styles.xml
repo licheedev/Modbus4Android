@@ -6,7 +6,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-        
+
         <item name="android:textAppearance">@style/MyTextAppearance</item>
         <item name="android:textAppearanceInverse">@style/MyTextAppearanceInverse</item>
         <item name="android:textAppearanceSmall">@style/MyTextAppearanceSmall</item>
@@ -39,7 +39,7 @@
     </style>
 
     <style name="EditTextStyle">
-        <item name="android:layout_height">90pt</item>
+        <item name="android:layout_height">@dimen/sw_90dp</item>
         <item name="android:singleLine">true</item>
         <item name="android:textColorHint">#C7C7C7</item>
     </style>
@@ -47,7 +47,7 @@
     <style name="ConsoleAreaStyle">
         <item name="android:background">#153D5A</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:padding">16pt</item>
+        <item name="android:padding">@dimen/sw_16dp</item>
     </style>
 
     <style name="ConsoleTextStyle">
@@ -60,7 +60,7 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:singleLine">true</item>
-        <item name="android:textSize">20pt</item>
+        <item name="android:textSize">@dimen/sw_20dp</item>
     </style>
 
 </resources>

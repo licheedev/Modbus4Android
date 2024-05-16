@@ -2,12 +2,11 @@ package com.licheedev.modbus4android;
 
 import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.exception.ModbusInitException;
-import io.reactivex.Observable;
 
 /**
  * Modbus工作接口，定义了Modbus初始化相关的方法
  */
-interface IModbusWorker {
+public interface IModbusWorker {
 
     /**
      * 关掉ModbusMaster
@@ -32,28 +31,6 @@ interface IModbusWorker {
      * @return
      */
     boolean isModbusOpened();
-
-    ///**
-    // * 给RxJava用的，Modbus工作线程调度器
-    // *
-    // * @return
-    // */
-    //Scheduler getModbusScheduler();
-    //
-    ///**
-    // * Modbus工作线程的Handler
-    // *
-    // * @return
-    // */
-    //Handler getModbusHandler();
-
-    /**
-     * [RX]初始化modbus
-     *
-     * @param param
-     * @return
-     */
-    Observable<ModbusMaster> rxInit(final ModbusParam param);
 
     /**
      * 初始化modbus

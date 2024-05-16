@@ -9,20 +9,20 @@
         android:id="@+id/btn_serial_port"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="16pt"
+        android:layout_margin="@dimen/sw_16dp"
         android:layout_weight="1"
         android:text="串口"
-        android:textSize="100pt" />
+        android:textSize="@dimen/sw_100dp" />
 
 
     <Button
         android:id="@+id/btn_tcp"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="16pt"
+        android:layout_margin="@dimen/sw_16dp"
         android:layout_weight="1"
         android:text="TCP"
-        android:textSize="100pt" />
+        android:textSize="@dimen/sw_100dp" />
 
 
 </LinearLayout>

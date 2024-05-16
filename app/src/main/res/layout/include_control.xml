@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -30,7 +30,7 @@
 
         <TextView
             style="@style/LabelStyle"
-            android:layout_marginLeft="16pt"
+            android:layout_marginLeft="@dimen/sw_16dp"
             android:text="波特率：" />
 
 
@@ -42,16 +42,16 @@
 
         <Button
             android:id="@+id/btn_switch"
-            android:layout_width="120pt"
+            android:layout_width="@dimen/sw_120dp"
             android:layout_height="wrap_content"
             android:text="连接" />
 
 
         <ImageButton
             android:id="@+id/btn_more_params"
-            android:layout_width="50pt"
+            android:layout_width="@dimen/sw_50dp"
             android:layout_height="match_parent"
-            android:layout_marginLeft="16pt"
+            android:layout_marginLeft="@dimen/sw_16dp"
             android:background="@drawable/selector_serial_params_bg"
             android:clickable="true"
             android:gravity="center"
@@ -73,7 +73,7 @@
         android:orientation="horizontal"
         android:visibility="gone"
         tools:visibility="visible"
-        android:padding="8pt"
+        android:padding="@dimen/sw_8dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/area_serial">
@@ -91,7 +91,7 @@
 
         <TextView
             style="@style/LabelStyle"
-            android:layout_marginLeft="16pt"
+            android:layout_marginLeft="@dimen/sw_16dp"
             android:text="校验位：" />
 
         <org.angmarch.views.NiceSpinner
@@ -103,7 +103,7 @@
 
         <TextView
             style="@style/LabelStyle"
-            android:layout_marginLeft="16pt"
+            android:layout_marginLeft="@dimen/sw_16dp"
             android:text="停止位：" />
 
         <org.angmarch.views.NiceSpinner
@@ -139,20 +139,20 @@
 
         <TextView
             style="@style/LabelStyle"
-            android:layout_marginLeft="16pt"
+            android:layout_marginLeft="@dimen/sw_16dp"
             android:text="设备端口：" />
 
         <EditText
             android:id="@+id/et_port"
             style="@style/EditTextStyle"
-            android:layout_width="0pt"
+            android:layout_width="0dp"
             android:layout_weight="1"
             android:hint="端口"
             android:inputType="numberDecimal" />
 
         <Button
             android:id="@+id/btn_switch_tcp"
-            android:layout_width="120pt"
+            android:layout_width="@dimen/sw_120dp"
             android:layout_height="wrap_content"
             android:text="连接" />
 
@@ -172,7 +172,7 @@
         <EditText
             android:id="@+id/et_slave_id"
             style="@style/EditTextStyle"
-            android:layout_width="360pt"
+            android:layout_width="@dimen/sw_360dp"
             android:hint="设备地址"
             android:inputType="numberDecimal"
             android:text="1" />
@@ -183,7 +183,7 @@
     <TextView
         android:id="@+id/label_fun"
         style="@style/LabelStyle"
-        android:layout_marginTop="16pt"
+        android:layout_marginTop="@dimen/sw_16dp"
         android:text="功能码:"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@id/area_slave_id" />
@@ -234,7 +234,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:layout_marginTop="8pt"
+            android:layout_marginTop="@dimen/sw_8dp"
             android:orientation="horizontal">
 
             <RadioButton
@@ -285,12 +285,12 @@
             style="@style/LabelStyle"
             android:gravity="center_horizontal"
             android:text="寄存器/线圈/输入量\n地址(16进制)："
-            android:textSize="24pt" />
+            android:textSize="@dimen/sw_24dp" />
 
         <EditText
             android:id="@+id/et_offset"
             style="@style/EditTextStyle"
-            android:layout_width="160pt"
+            android:layout_width="@dimen/sw_160dp"
             android:digits="1234567890ABCDEFabcdef"
             android:hint="地址"
             android:maxLength="4" />
@@ -308,12 +308,12 @@
             style="@style/LabelStyle"
             android:gravity="center_horizontal"
             android:text="寄存器/线圈/输入量\n数量(10进制)："
-            android:textSize="24pt" />
+            android:textSize="@dimen/sw_24dp" />
 
         <EditText
             android:id="@+id/et_amount"
             style="@style/EditTextStyle"
-            android:layout_width="160pt"
+            android:layout_width="@dimen/sw_160dp"
             android:hint="数量"
             android:inputType="numberDecimal" />
 
@@ -369,10 +369,10 @@
             android:layout_height="wrap_content"
             android:digits="0123456789abcdefABCDEF,"
             android:hint="@string/multi_reg_hint"
-            android:minHeight="90pt"
+            android:minHeight="@dimen/sw_90dp"
             android:singleLine="false" />
 
     </LinearLayout>
 
 
-</android.support.constraint.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -22,11 +22,11 @@
     <!--<item name="android:textAppearanceLargeInverse">@style/MyTextAppearanceLargeInverse</item>-->
     <!--<item name="android:textAppearanceButton">@style/MyTextAppearanceButton</item>-->
     <!--<item name="android:editTextStyle">@style/MyTextAppearanceEditText</item>-->
-    
 
-    <dimen name="small_text_size">28pt</dimen>
-    <dimen name="medium_text_size">36pt</dimen>
-    <dimen name="large_text_size">44pt</dimen>
+
+    <dimen name="small_text_size">@dimen/sw_28dp</dimen>
+    <dimen name="medium_text_size">@dimen/sw_36dp</dimen>
+    <dimen name="large_text_size">@dimen/sw_44dp</dimen>
 
     <style name="MyTextAppearance" parent="TextAppearance.AppCompat">
         <item name="android:textSize">@dimen/small_text_size</item>

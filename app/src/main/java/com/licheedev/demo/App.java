@@ -1,7 +1,6 @@
 package com.licheedev.demo;
 
 import android.app.Application;
-import com.licheedev.adaptscreen.AdaptScreenEx;
 import com.licheedev.demo.base.PrefUtil;
 import com.serotonin.modbus4j.ModbusConfig;
 
@@ -13,8 +12,6 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         sInstance = this;
-        // 屏幕适配
-        AdaptScreenEx.init(this);
         PrefUtil.init(this);
 
         configModbus();

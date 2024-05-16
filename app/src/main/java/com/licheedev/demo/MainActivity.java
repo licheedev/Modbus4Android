@@ -3,7 +3,6 @@ package com.licheedev.demo;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.IntDef;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -13,6 +12,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
+import androidx.annotation.IntDef;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -20,8 +20,8 @@ import com.licheedev.demo.base.BaseActivity;
 import com.licheedev.demo.base.ByteUtil;
 import com.licheedev.demo.modbus.DeviceConfig;
 import com.licheedev.demo.modbus.ModbusManager;
+import com.licheedev.impl.rxjava.ModbusObserver;
 import com.licheedev.modbus4android.ModbusCallback;
-import com.licheedev.modbus4android.ModbusObserver;
 import com.licheedev.modbus4android.ModbusParam;
 import com.licheedev.modbus4android.param.SerialParam;
 import com.licheedev.modbus4android.param.TcpParam;
@@ -481,6 +481,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void appendError(String func, Throwable tr) {
+        LogPlus.e("出现异常",tr);
         appendText(func + "异常:\n" + tr + "\n");
     }
 
@@ -527,11 +528,13 @@ public class MainActivity extends BaseActivity {
                     new ModbusCallback<ReadDiscreteInputsResponse>() {
                         @Override
                         public void onSuccess(
-                            ReadDiscreteInputsResponse readDiscreteInputsResponse) {
+                            ReadDiscreteInputsResponse readDiscreteInputsResponse
+                        ) {
 
                             boolean[] sub =
                                 ArrayUtils.subarray(readDiscreteInputsResponse.getBooleanData(), 0,
-                                    amount);
+                                    amount
+                                );
                             appendText("F02读取：\n" + ArrayUtils.toString(sub) + "\n");
                         }
 
@@ -544,7 +547,8 @@ public class MainActivity extends BaseActivity {
                         public void onFinally() {
 
                         }
-                    });
+                    }
+                );
         }
     }
 
@@ -582,7 +586,8 @@ public class MainActivity extends BaseActivity {
                 .subscribe(new ModbusObserver<ReadHoldingRegistersResponse>() {
                     @Override
                     public void onSuccess(
-                        ReadHoldingRegistersResponse readHoldingRegistersResponse) {
+                        ReadHoldingRegistersResponse readHoldingRegistersResponse
+                    ) {
                         byte[] data = readHoldingRegistersResponse.getData();
                         appendText("F03读取：\n" + ByteUtil.bytes2HexStr(data) + "\n");
                     }
@@ -604,7 +609,8 @@ public class MainActivity extends BaseActivity {
                     new ModbusCallback<ReadInputRegistersResponse>() {
                         @Override
                         public void onSuccess(
-                            ReadInputRegistersResponse readInputRegistersResponse) {
+                            ReadInputRegistersResponse readInputRegistersResponse
+                        ) {
                             byte[] data = readInputRegistersResponse.getData();
                             appendText("F04读取：\n" + ByteUtil.bytes2HexStr(data) + "\n");
                         }
@@ -618,7 +624,8 @@ public class MainActivity extends BaseActivity {
                         public void onFinally() {
 
                         }
-                    });
+                    }
+                );
         }
     }
 
@@ -643,7 +650,8 @@ public class MainActivity extends BaseActivity {
                         public void onFinally() {
 
                         }
-                    });
+                    }
+                );
         }
     }
 
@@ -667,7 +675,8 @@ public class MainActivity extends BaseActivity {
                         public void onFinally() {
 
                         }
-                    });
+                    }
+                );
         }
     }
 
@@ -691,7 +700,8 @@ public class MainActivity extends BaseActivity {
                         public void onFinally() {
 
                         }
-                    });
+                    }
+                );
         }
     }
 
@@ -717,7 +727,8 @@ public class MainActivity extends BaseActivity {
                         public void onFinally() {
 
                         }
-                    });
+                    }
+                );
         }
     }
 
