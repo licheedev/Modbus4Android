@@ -25,9 +25,20 @@ allprojects {
 }
 
   dependencies {
-	        implementation 'com.github.licheedev:Modbus4Android:3.0.0'
+    implementation('com.github.licheedev:Modbus4Android:3.0.0') {
+        // 解决"commons-logging"冲突问题
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
 }
+```
 
+```xml
+<manifest ...>
+    <application ...>
+        <!-- 解决"commons-logging"冲突问题 -->
+        <uses-library android:name="org.apache.http.legacy" android:required="false" />
+    </application>
+</manifest>
 ```
 
 ### 创建管理类单例

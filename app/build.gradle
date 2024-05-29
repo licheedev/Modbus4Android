@@ -37,8 +37,14 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    implementation project(':modbus4android')
-    //    implementation 'com.github.licheedev:Modbus4Android:0.21'
+    implementation(project(':modbus4android')) {
+        // 解决"commons-logging"冲突问题
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
+    //implementation('com.github.licheedev:Modbus4Android:3.0.0') {
+    //    // 解决"commons-logging"冲突问题
+    //    exclude group: 'commons-logging', module: 'commons-logging'
+    //}
     // logplus
     implementation 'com.licheedev:logplus:1.0.1'
     // gson
@@ -49,7 +55,7 @@ dependencies {
     implementation 'com.github.fodroid:XRadioGroup:v1.5'
     // 屏幕适配
     implementation 'com.github.licheedev.SmallestWidthDimens:sw_750:1.0.0'
-    
+
     // 黄油刀
     implementation 'com.jakewharton:butterknife:10.2.3'
     annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.3'
